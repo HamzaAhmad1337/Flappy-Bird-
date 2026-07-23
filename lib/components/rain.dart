@@ -69,7 +69,7 @@ class Rain extends PositionComponent {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 1.6;
     // Slant direction from wind + gravity.
-    final slant = Offset(GameConfig.rainWindX, GameConfig.rainMaxSpeed);
+    const slant = Offset(GameConfig.rainWindX, GameConfig.rainMaxSpeed);
     final norm = slant / slant.distance;
     for (final d in _drops) {
       paint.color = GameConfig.rainColor.withValues(alpha: d.alpha * 0.9);

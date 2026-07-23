@@ -7,27 +7,34 @@ import 'package:flutter/material.dart';
 import '../game/config.dart';
 import '../game/flappy_game.dart';
 
-/// A layered, parallax-scrolling storm sky: gradient sky, two mountain ranges,
-/// a distant city silhouette and drifting clouds. Everything is drawn on the
-/// canvas — no image assets required.
+/// A layered, parallax-scrolling storm sky with a full day → night cycle:
+/// a shifting gradient, sun/moon crossfade, twinkling stars, mountains, a city
+/// silhouette and drifting clouds. Everything is drawn on the canvas.
 class Background extends PositionComponent with HasGameReference<FlappyGame> {
   Background() : super(priority: -100);
 
   final Random _rng = Random(42);
 
-  // Parallax offsets (px). Each layer scrolls at a fraction of the world speed.
   double _farOffset = 0;
   double _nearOffset = 0;
   double _cityOffset = 0;
   final List<_Cloud> _clouds = [];
+  final List<_Star> _stars = [];
 
-  // Cached mountain silhouettes so we don't rebuild the paths every frame.
   late final Path _farRange = _buildRange(seed: 7, amplitude: 70, step: 90);
   late final Path _nearRange = _buildRange(seed: 21, amplitude: 110, step: 70);
   late final Path _cityLine = _buildCity();
 
   static const double _w = GameConfig.width;
   static const double _h = GameConfig.height;
+
+  // Sky keyframes: dawn, day, dusk, night. [top, mid, bottom].
+  static const List<List<Color>> _skyKeys = [
+    [Color(0xFF39456B), Color(0xFF7C6E97), Color(0xFFD98C6A)], // dawn
+    [Color(0xFF13293D), Color(0xFF1B4965), Color(0xFF2C6E8F)], // day (stormy)
+    [Color(0xFF2B1D3A), Color(0xFF7A3B5E), Color(0xFFD46A4A)], // dusk
+    [Color(0xFF070C1C), Color(0xFF0E1D33), Color(0xFF16324A)], // night
+  ];
 
   @override
   Future<void> onLoad() async {
@@ -40,12 +47,18 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
         speed: 6 + _rng.nextDouble() * 10,
       ));
     }
+    for (int i = 0; i < 70; i++) {
+      _stars.add(_Star(
+        x: _rng.nextDouble() * _w,
+        y: _rng.nextDouble() * (_h * 0.6),
+        size: 0.6 + _rng.nextDouble() * 1.6,
+        phase: _rng.nextDouble() * pi * 2,
+      ));
+    }
   }
 
   @override
   void update(double dt) {
-    // Distant things scroll slower, creating depth. Always drift a little,
-    // even on the menu, so the scene feels alive.
     final base = game.state == GameState.playing ? game.scrollSpeed : 26.0;
     _farOffset = (_farOffset + base * 0.08 * dt) % _w;
     _nearOffset = (_nearOffset + base * 0.16 * dt) % _w;
@@ -57,37 +70,100 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
         c.y = 40 + _rng.nextDouble() * 220;
       }
     }
+    for (final s in _stars) {
+      s.phase += dt * 2.5;
+    }
+  }
+
+  // Interpolate the sky palette for the current phase (0..1 around the clock).
+  List<Color> _skyFor(double phase) {
+    final scaled = (phase % 1.0) * 4.0; // 0..4 over dawn/day/dusk/night
+    final i = scaled.floor() % 4;
+    final j = (i + 1) % 4;
+    final t = scaled - scaled.floor();
+    return [
+      Color.lerp(_skyKeys[i][0], _skyKeys[j][0], t)!,
+      Color.lerp(_skyKeys[i][1], _skyKeys[j][1], t)!,
+      Color.lerp(_skyKeys[i][2], _skyKeys[j][2], t)!,
+    ];
   }
 
   @override
   void render(Canvas canvas) {
-    _paintSky(canvas);
-    _paintClouds(canvas);
-    _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360);
-    _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300);
-    _paintCity(canvas);
+    final phase = game.skyPhase;
+    // Dayness: 1 at midday (phase .25), 0 at midnight (phase .75).
+    final dayness = (0.5 + 0.5 * cos((phase - 0.25) * 2 * pi)).clamp(0.0, 1.0);
+    final nightAmount = 1 - dayness;
+
+    _paintSky(canvas, phase);
+    _paintStars(canvas, nightAmount);
+    _paintCelestial(canvas, dayness, nightAmount, phase);
+    _paintClouds(canvas, dayness);
+    _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360, nightAmount);
+    _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300, nightAmount);
+    _paintCity(canvas, nightAmount);
     _paintHaze(canvas);
   }
 
-  // ---- Sky -----------------------------------------------------------------
-  void _paintSky(Canvas canvas) {
-    final rect = Rect.fromLTWH(0, 0, _w, _h);
+  void _paintSky(Canvas canvas, double phase) {
+    final colors = _skyFor(phase);
     final paint = Paint()
       ..shader = ui.Gradient.linear(
         const Offset(0, 0),
         const Offset(0, _h),
-        const [
-          GameConfig.skyTop,
-          GameConfig.skyMid,
-          GameConfig.skyBottom,
-        ],
+        colors,
         const [0.0, 0.55, 1.0],
       );
-    canvas.drawRect(rect, paint);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, _w, _h), paint);
   }
 
-  void _paintClouds(Canvas canvas) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.06);
+  void _paintStars(Canvas canvas, double nightAmount) {
+    if (nightAmount <= 0.02) return;
+    final paint = Paint();
+    for (final s in _stars) {
+      final twinkle = 0.5 + 0.5 * sin(s.phase);
+      paint.color = Colors.white.withValues(alpha: nightAmount * twinkle * 0.9);
+      canvas.drawCircle(Offset(s.x, s.y), s.size, paint);
+    }
+  }
+
+  void _paintCelestial(Canvas canvas, double dayness, double nightAmount, double phase) {
+    // Sun and moon share an arc; each fades with time of day.
+    const arcX = _w * 0.72;
+    final arcY = 120 + sin(phase * 2 * pi) * 30;
+
+    if (dayness > 0.02) {
+      canvas.drawCircle(
+        Offset(arcX, arcY), 60,
+        Paint()
+          ..color = const Color(0xFFFFE9A8).withValues(alpha: dayness * 0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30),
+      );
+      canvas.drawCircle(
+        Offset(arcX, arcY), 30,
+        Paint()..color = const Color(0xFFFFF2C4).withValues(alpha: dayness),
+      );
+    }
+    if (nightAmount > 0.02) {
+      canvas.drawCircle(
+        Offset(arcX, arcY), 50,
+        Paint()
+          ..color = const Color(0xFFDDE8FF).withValues(alpha: nightAmount * 0.25)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22),
+      );
+      final moon = Paint()..color = const Color(0xFFEAF0FF).withValues(alpha: nightAmount);
+      canvas.drawCircle(Offset(arcX, arcY), 26, moon);
+      // Crater shadow to give the moon a crescent-ish read.
+      canvas.drawCircle(
+        Offset(arcX + 12, arcY - 6), 24,
+        Paint()..color = _skyFor(phase)[0].withValues(alpha: nightAmount),
+      );
+    }
+  }
+
+  void _paintClouds(Canvas canvas, double dayness) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05 + dayness * 0.03);
     for (final c in _clouds) {
       canvas.save();
       canvas.translate(c.x, c.y);
@@ -105,15 +181,13 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     }
   }
 
-  // ---- Mountains -----------------------------------------------------------
   Path _buildRange({required int seed, required double amplitude, required double step}) {
     final rng = Random(seed);
-    // Build a range wider than the screen so it can wrap seamlessly.
     final path = Path()..moveTo(0, _h);
     double x = 0;
     double y = _h - 200 - rng.nextDouble() * amplitude;
     path.lineTo(0, y);
-    final double totalWidth = _w * 2;
+    const double totalWidth = _w * 2;
     while (x < totalWidth) {
       final nx = x + step;
       final ny = _h - 180 - rng.nextDouble() * amplitude;
@@ -128,14 +202,14 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     return path;
   }
 
-  void _paintRange(Canvas canvas, Path range, double offset, Color color, double topY) {
+  void _paintRange(Canvas canvas, Path range, double offset, Color color, double topY, double nightAmount) {
+    final c = Color.lerp(color, const Color(0xFF0A1526), nightAmount * 0.6)!;
     final paint = Paint()
       ..shader = ui.Gradient.linear(
         Offset(0, topY),
         const Offset(0, _h),
-        [color, color.withValues(alpha: 0.75)],
+        [c, c.withValues(alpha: 0.75)],
       );
-    // Draw twice, offset by _w, for a seamless scroll.
     for (final dx in [-offset, _w - offset]) {
       canvas.save();
       canvas.translate(dx, 0);
@@ -144,13 +218,12 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     }
   }
 
-  // ---- City ----------------------------------------------------------------
   Path _buildCity() {
     final rng = Random(99);
     final path = Path()..moveTo(0, _h);
     double x = 0;
-    final double baseY = _h - GameConfig.groundHeight - 6;
-    final double totalWidth = _w * 2;
+    const double baseY = _h - GameConfig.groundHeight - 6;
+    const double totalWidth = _w * 2;
     while (x < totalWidth) {
       final bw = 26 + rng.nextDouble() * 34;
       final bh = 60 + rng.nextDouble() * 150;
@@ -166,7 +239,7 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     return path;
   }
 
-  void _paintCity(Canvas canvas) {
+  void _paintCity(Canvas canvas, double nightAmount) {
     final paint = Paint()..color = GameConfig.cityColor.withValues(alpha: 0.9);
     for (final dx in [-_cityOffset, _w - _cityOffset]) {
       canvas.save();
@@ -174,8 +247,9 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
       canvas.drawPath(_cityLine, paint);
       canvas.restore();
     }
-    // Warm window lights flicker faintly in the towers.
-    final light = Paint()..color = const Color(0xFFFFCB6B).withValues(alpha: 0.10);
+    // Window lights glow brighter at night.
+    final light = Paint()
+      ..color = const Color(0xFFFFCB6B).withValues(alpha: 0.08 + nightAmount * 0.35);
     final rng = Random(3);
     for (int i = 0; i < 60; i++) {
       final wx = rng.nextDouble() * _w;
@@ -184,16 +258,15 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     }
   }
 
-  // A soft haze near the horizon adds atmospheric depth.
   void _paintHaze(Canvas canvas) {
-    final r = Rect.fromLTWH(0, _h - GameConfig.groundHeight - 150, _w, 150);
+    const r = Rect.fromLTWH(0, _h - GameConfig.groundHeight - 150, _w, 150);
     final paint = Paint()
       ..shader = ui.Gradient.linear(
         r.topLeft,
         r.bottomLeft,
         [
           GameConfig.skyBottom.withValues(alpha: 0.0),
-          GameConfig.skyBottom.withValues(alpha: 0.35),
+          GameConfig.skyBottom.withValues(alpha: 0.30),
         ],
       );
     canvas.drawRect(r, paint);
@@ -206,4 +279,12 @@ class _Cloud {
   double y;
   final double scale;
   final double speed;
+}
+
+class _Star {
+  _Star({required this.x, required this.y, required this.size, required this.phase});
+  final double x;
+  final double y;
+  final double size;
+  double phase;
 }

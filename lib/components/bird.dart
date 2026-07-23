@@ -6,18 +6,24 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import '../game/skins.dart';
 
-/// The player's bird. Handles its own gravity/velocity, tilts toward its
-/// direction of travel, and draws a stylized, glossy bird with a flapping wing.
+/// The player's bird. Handles gravity/velocity, tilts toward its direction of
+/// travel, and draws a glossy bird using the currently selected skin — with an
+/// optional aura for legendary skins and a shimmering shield ring when the
+/// shield power-up is active.
 class Bird extends PositionComponent with HasGameReference<FlappyGame> {
   Bird() : super(priority: 10, anchor: Anchor.center);
 
   double velocity = 0;
-  double _wingPhase = 0; // drives idle wing flutter
-  double _flapImpulse = 0; // extra wing kick right after a flap
+  double _wingPhase = 0;
+  double _flapImpulse = 0;
   double _tilt = 0;
+  double _trailTimer = 0;
 
   static const double r = GameConfig.birdRadius;
+
+  BirdSkin get skin => game.skin;
 
   @override
   Future<void> onLoad() async {
@@ -34,9 +40,9 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
   void flap() {
     velocity = GameConfig.flapVelocity;
     _flapImpulse = 1;
+    game.particles.feathers(position.x - 6, position.y + 4, skin.wing, count: 4);
   }
 
-  /// Gentle bobbing used on the menu / before the game starts.
   void idleBob(double dt, double t) {
     position.y = GameConfig.birdStartY + sin(t * 3) * 8;
     _wingPhase += dt * 10;
@@ -53,40 +59,53 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
     velocity = min(velocity + GameConfig.gravity * dt, GameConfig.maxFallSpeed);
     position.y += velocity * dt;
 
-    // Tilt: nose up when rising, dive when falling. Eased for smoothness.
     final target = velocity < 0
         ? GameConfig.tiltUp
         : (GameConfig.tiltUp +
             (velocity / GameConfig.maxFallSpeed) *
                 (GameConfig.tiltDown - GameConfig.tiltUp));
     _tilt += (target - _tilt) * min(1, dt * 10);
+
+    // Flight trail.
+    _trailTimer -= dt;
+    if (_trailTimer <= 0 && !game.reducedMotion) {
+      _trailTimer = 0.04;
+      game.particles.trail(position.x - r, position.y + 3, skin.trail);
+    }
   }
 
   @override
   void render(Canvas canvas) {
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
+
+    if (skin.glow) {
+      canvas.drawCircle(
+        Offset.zero, r * 1.7,
+        Paint()
+          ..color = skin.trail.withValues(alpha: 0.28)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      );
+    }
+
     canvas.rotate(_tilt);
 
-    // Soft shadow / glow beneath the bird.
     final glow = Paint()
       ..color = Colors.black.withValues(alpha: 0.18)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
     canvas.drawOval(Rect.fromCenter(center: const Offset(0, 3), width: r * 2.4, height: r * 1.9), glow);
 
-    // Body with a top-lit gradient.
     final bodyRect = Rect.fromCenter(center: Offset.zero, width: r * 2.3, height: r * 2.0);
     final body = Paint()
       ..shader = ui.Gradient.linear(
         bodyRect.topCenter,
         bodyRect.bottomCenter,
-        const [Color(0xFFFFE477), GameConfig.birdBody, Color(0xFFF0B21F)],
+        [skin.hi, skin.body, skin.lo],
         const [0.0, 0.55, 1.0],
       );
     canvas.drawOval(bodyRect, body);
 
-    // Belly highlight.
-    final belly = Paint()..color = GameConfig.birdBelly.withValues(alpha: 0.7);
+    final belly = Paint()..color = skin.belly.withValues(alpha: 0.7);
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(-1, 5), width: r * 1.5, height: r * 1.1),
       belly,
@@ -94,12 +113,15 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
 
     _drawWing(canvas);
     _drawFace(canvas);
-
     canvas.restore();
+
+    // Shield ring is drawn upright (not tilted) so it reads clearly.
+    if (game.shieldActive) {
+      _drawShield(canvas);
+    }
   }
 
   void _drawWing(Canvas canvas) {
-    // Wing angle: fast flap kick blended with a gentle idle flutter.
     final flutter = sin(_wingPhase) * 0.35;
     final kick = _flapImpulse * -0.9;
     final angle = -0.15 + flutter + kick;
@@ -112,38 +134,28 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
       ..shader = ui.Gradient.linear(
         wingRect.topCenter,
         wingRect.bottomCenter,
-        const [Color(0xFFFFC24B), GameConfig.birdWing],
+        [Color.lerp(skin.wing, Colors.white, 0.25)!, skin.wing],
       );
     canvas.drawOval(wingRect, wing);
-    // Wing outline for definition.
     canvas.drawOval(
       wingRect,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2
-        ..color = const Color(0xFFCE7C1E).withValues(alpha: 0.6),
+        ..color = Color.lerp(skin.wing, Colors.black, 0.3)!.withValues(alpha: 0.6),
     );
     canvas.restore();
   }
 
   void _drawFace(Canvas canvas) {
-    // Beak.
-    final beak = Paint()..color = const Color(0xFFF26A21);
+    final beak = Paint()..color = skin.beak;
     final beakPath = Path()
       ..moveTo(r * 0.9, -2)
       ..lineTo(r * 1.9, 1)
       ..lineTo(r * 0.9, 5)
       ..close();
     canvas.drawPath(beakPath, beak);
-    canvas.drawPath(
-      beakPath,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = const Color(0xFFB4470F).withValues(alpha: 0.5),
-    );
 
-    // Eye white + iris + shine.
     canvas.drawCircle(const Offset(6, -6), 6.2, Paint()..color = Colors.white);
     canvas.drawCircle(
       const Offset(6, -6),
@@ -157,7 +169,26 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
     canvas.drawCircle(const Offset(8.6, -7.2), 1.0, Paint()..color = Colors.white);
   }
 
-  /// Circular collision bounds in world space.
+  void _drawShield(Canvas canvas) {
+    canvas.save();
+    canvas.translate(size.x / 2, size.y / 2);
+    final t = game.shieldRemaining;
+    // Blink faster as it's about to expire.
+    final blink = t < 3 ? (sin(t * 18) * 0.5 + 0.5) : 1.0;
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..color = PowerType.shield.color.withValues(alpha: 0.85 * blink);
+    canvas.drawCircle(Offset.zero, r * 1.55, ring);
+    canvas.drawCircle(
+      Offset.zero, r * 1.55,
+      Paint()
+        ..color = PowerType.shield.color.withValues(alpha: 0.12 * blink)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.restore();
+  }
+
   ({double x, double y, double r}) get bounds =>
       (x: position.x, y: position.y, r: r);
 }

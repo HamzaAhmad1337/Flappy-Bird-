@@ -10,19 +10,38 @@ code.
 
 ## ✨ Features
 
+**World & atmosphere**
+- **Full day → night cycle** — the sky continuously shifts through dawn, day,
+  dusk and night, with a crossfading sun & moon and twinkling stars.
 - **Living storm environment** — layered parallax sky, mountains, a city
-  silhouette, and drifting clouds.
+  silhouette with glowing windows, and drifting clouds.
 - **Falling rain** — hundreds of wind-slanted raindrops with ground splashes.
 - **Lightning** — random flashes and forked bolts light up the sky.
-- **A hand-drawn bird** — glossy body, flapping wing, and velocity-based tilt.
+
+**Gameplay & juice**
+- **A hand-drawn bird** — glossy body, flapping wing, velocity-based tilt and a
+  flight trail.
+- **Collectible coins** — a real coin wallet that persists between sessions.
+- **Power-ups** — 🛡️ Shield (survive a hit), ⏳ Slow-Mo (bullet time), and
+  🧲 Magnet (vacuum up coins), each with live HUD timers.
+- **Combos** — chain pipes for combo call-outs and bonus coins.
+- **Near-miss bullet-time**, **screen shake**, and a burst of feathers on
+  impact.
 - **Polished pipes & ground** — gradient "tube" pipes with wet highlights and a
   seamlessly scrolling grassy ground.
-- **Full game flow** — animated main menu, live HUD, pause screen, and a
-  game-over screen with medals (Bronze → Platinum) and a "New Best!" flourish.
-- **Persistent high score** via `shared_preferences`.
-- **Haptic feedback**, gentle difficulty ramp, auto-pause when backgrounded,
-  portrait-locked immersive fullscreen.
-- Works on **Android, iOS, and the web** (great for quick previews).
+
+**Meta & polish**
+- **Bird shop** — 8 unlockable skins (Robin, Blue Jay, Phoenix, Midas…) bought
+  with coins; some legendary skins glow.
+- **Full game flow** — animated menu, live HUD, pause, and a game-over screen
+  with medals (Bronze → Platinum) and a "New Best!" flourish.
+- **Real synthesized sound effects** (bundled WAV assets) + haptics.
+- **Settings** — toggle sound, haptics, and a reduced-motion mode.
+- **Persistent** high score, coins, unlocked skins & settings via
+  `shared_preferences`.
+- Gentle difficulty ramp, auto-pause when backgrounded, portrait-locked
+  immersive fullscreen.
+- Ships with a **generated app icon** and runs on **Android, iOS, and the web**.
 
 ## 🏗️ Project structure
 
@@ -30,24 +49,30 @@ code.
 lib/
 ├── main.dart                  # App entry, GameWidget + overlays, lifecycle
 ├── game/
-│   ├── config.dart            # All tunable constants & palette
-│   └── flappy_game.dart       # FlameGame: state, spawning, collisions, score
+│   ├── config.dart            # All tunable constants, palette, power-up types
+│   ├── flappy_game.dart       # FlameGame: state, spawning, collisions, juice
+│   └── skins.dart             # Bird skin definitions (the shop catalog)
 ├── components/
-│   ├── background.dart        # Parallax storm sky
-│   ├── rain.dart              # Rain particle system
-│   ├── lightning.dart         # Flashes & bolts
-│   ├── bird.dart              # Player bird (physics + rendering)
+│   ├── background.dart        # Parallax storm sky + day/night cycle
+│   ├── rain.dart / lightning.dart
+│   ├── bird.dart              # Player bird (physics + skinned rendering)
 │   ├── pipe_pair.dart         # Obstacle pipes + collision
-│   └── ground.dart            # Scrolling ground
-├── overlays/                  # Flutter UI: menu, HUD, pause, game over
+│   ├── ground.dart            # Scrolling ground
+│   ├── coin.dart / powerup.dart
+│   ├── particles.dart         # Feathers, sparkles, bursts, trails
+│   └── floating_text.dart     # Score / combo pop-ups
+├── overlays/                  # Flutter UI: menu, HUD, pause, game over, shop, settings
 └── services/
-    ├── storage.dart           # High-score persistence
-    └── sfx.dart               # Haptics (swap in real audio later)
+    ├── storage.dart           # Save data (score, coins, skins, settings)
+    └── sfx.dart               # Sound effects + haptics
+assets/
+├── audio/                     # Synthesized WAV sound effects
+└── icon/icon.png              # Source app icon
 ```
 
-Tune gameplay and colors in **`lib/game/config.dart`** — gravity, flap
-strength, pipe gap/speed, rain density, difficulty ramp, and the palette all
-live there.
+Tune everything in **`lib/game/config.dart`** — gravity, flap strength, pipe
+gap/speed, rain density, difficulty ramp, coin/power-up rates, day length, and
+the palette. Add a bird skin in **`lib/game/skins.dart`** (just a palette).
 
 ## 🚀 Getting started
 
@@ -60,20 +85,17 @@ Follow <https://docs.flutter.dev/get-started/install> (Flutter 3.27+ / Dart
 flutter doctor
 ```
 
-### 2. Generate the native platform folders
+### 2. Platform folders are included ✅
 
-This repo contains the game source (`lib/`, `pubspec.yaml`, `test/`). Generate
-the `android/`, `ios/`, and `web/` runner projects with your own app identity:
+The `android/`, `ios/`, and `web/` runner projects are already generated (with a
+placeholder org `com.flappyrain`). **Before publishing, change the app id** to
+your own reverse-domain identifier:
 
-```bash
-cd Flappy-Bird-
-flutter create --org com.yourcompany --project-name flappy_rain .
-```
+- **Android** — `applicationId` in `android/app/build.gradle`.
+- **iOS** — *Bundle Identifier* in Xcode (`ios/Runner.xcworkspace`).
 
-`flutter create .` **does not overwrite** existing files like `lib/` or
-`pubspec.yaml`; it only adds the missing platform scaffolding. Pick a real
-reverse-domain org (e.g. `com.yourname`) — it becomes your Android
-`applicationId` / iOS bundle ID.
+(If you ever need to regenerate them, `flutter create .` adds missing platform
+scaffolding without overwriting `lib/` or `pubspec.yaml`.)
 
 ### 3. Run it
 
@@ -86,37 +108,25 @@ flutter run -d chrome       # quick preview in the browser
 ## 🎮 How to play
 
 Tap anywhere (or press **Space** / **↑** on desktop) to flap. Fly through the
-gaps in the pipes. Each pipe cleared is one point. Don't hit a pipe, the
-ground, and try to beat your best.
+gaps in the pipes — each cleared pipe is a point. Grab **coins** to spend in the
+shop and snag **power-ups** for an edge. Chain pipes for **combos**. Don't hit a
+pipe or the ground, and beat your best.
 
-## 🎨 Add an app icon (optional but recommended)
+## 🎨 App icon & sound (already included)
 
-1. Put a 1024×1024 PNG at `assets/icon/icon.png`.
-2. Run:
-
-   ```bash
-   flutter pub get
-   dart run flutter_launcher_icons
-   ```
-
-Icon settings are already configured in `pubspec.yaml`.
-
-## 🔊 Adding real sound effects (optional)
-
-The game uses haptics so it ships with zero audio binaries. To add sound:
-
-1. Add `flame_audio: ^2.10.1` to `pubspec.yaml`.
-2. Put `flap.wav`, `score.wav`, `hit.wav` in `assets/audio/` and declare the
-   folder under `flutter: assets:`.
-3. Replace the haptic calls in `lib/services/sfx.dart` with
-   `FlameAudio.play('flap.wav')`, etc.
+- **Icon**: a source icon lives at `assets/icon/icon.png` and the native
+  launcher icons are pre-generated. To change it, drop in a new 1024×1024 PNG and
+  run `dart run flutter_launcher_icons`.
+- **Sound**: real synthesized effects ship in `assets/audio/` (generated with
+  `tools/gen_audio.py`). Regenerate or tweak them with
+  `python3 tools/gen_audio.py`.
 
 ---
 
 ## 📦 Publishing
 
-> The commands assume you ran `flutter create .` (step 2 above) so the native
-> projects exist.
+> The native projects already exist in `android/`, `ios/`, and `web/`. Remember
+> to change the placeholder app id (`com.flappyrain`) to your own first.
 
 ### Android → Google Play
 

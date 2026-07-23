@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../services/sfx.dart';
 import '../game/flappy_game.dart';
 import 'ui_kit.dart';
 
-/// Start screen: title, best score, and a "tap to play" prompt that gently
-/// pulses to invite interaction.
+/// Start screen: title, coin balance, Play / Shop / Settings, and a gently
+/// pulsing "tap to play" hint (the whole screen is tappable to start).
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key, required this.game});
   final FlappyGame game;
@@ -26,33 +27,78 @@ class _MainMenuState extends State<MainMenu> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return SafeArea(
+      child: Stack(
         children: [
-          const Spacer(flex: 2),
-          Text('FLAPPY', style: UiKit.title(52)),
-          Text('RAIN', style: UiKit.title(64).copyWith(color: UiKit.accent)),
-          const SizedBox(height: 10),
-          ValueListenableBuilder<int>(
-            valueListenable: widget.game.best,
-            builder: (_, best, __) => Text(
-              'BEST  $best',
-              style: UiKit.label(18, color: Colors.white.withValues(alpha: 0.85)),
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: ValueListenableBuilder<int>(
+                valueListenable: widget.game.wallet,
+                builder: (_, coins, __) => CoinPill(count: coins),
+              ),
             ),
           ),
-          const Spacer(flex: 3),
-          FadeTransition(
-            opacity: Tween(begin: 0.45, end: 1.0).animate(_c),
+          Center(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.touch_app_rounded, color: Colors.white, size: 40),
-                const SizedBox(height: 6),
-                Text('TAP  TO  PLAY', style: UiKit.label(20)),
+                const Spacer(flex: 2),
+                Text('FLAPPY', style: UiKit.title(52)),
+                Text('RAIN', style: UiKit.title(64).copyWith(color: UiKit.accent)),
+                const SizedBox(height: 8),
+                ValueListenableBuilder<int>(
+                  valueListenable: widget.game.best,
+                  builder: (_, best, __) => Text(
+                    'BEST  $best',
+                    style: UiKit.label(18, color: Colors.white.withValues(alpha: 0.85)),
+                  ),
+                ),
+                const Spacer(flex: 3),
+                GameButton(
+                  label: 'PLAY',
+                  icon: Icons.play_arrow_rounded,
+                  onTap: () {
+                    widget.game.startGame();
+                    widget.game.bird.flap();
+                  },
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GameButton(
+                      label: 'Shop',
+                      icon: Icons.storefront_rounded,
+                      primary: false,
+                      onTap: () {
+                        Sfx.button();
+                        widget.game.overlays.add('shop');
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    GameButton(
+                      label: 'Settings',
+                      icon: Icons.settings_rounded,
+                      primary: false,
+                      onTap: () {
+                        Sfx.button();
+                        widget.game.overlays.add('settings');
+                      },
+                    ),
+                  ],
+                ),
+                const Spacer(flex: 2),
+                FadeTransition(
+                  opacity: Tween(begin: 0.35, end: 0.9).animate(_c),
+                  child: Text('tap anywhere to fly',
+                      style: UiKit.label(15, color: Colors.white.withValues(alpha: 0.8))),
+                ),
+                const Spacer(flex: 1),
               ],
             ),
           ),
-          const Spacer(flex: 3),
         ],
       ),
     );

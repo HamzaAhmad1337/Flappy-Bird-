@@ -15,6 +15,7 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
   final double gapCenter; // y of the middle of the opening
   final double gap; // vertical opening height
   bool scored = false;
+  bool nearMissed = false;
 
   static const double _w = GameConfig.pipeWidth;
   static const double _cap = GameConfig.pipeCapHeight;
@@ -36,7 +37,7 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
 
   @override
   void render(Canvas canvas) {
-    final groundY = GameConfig.height - GameConfig.groundHeight;
+    const groundY = GameConfig.height - GameConfig.groundHeight;
     _drawPipe(canvas, top: 0, bottom: topPipeBottom, capAtBottom: true);
     _drawPipe(canvas, top: bottomPipeTop, bottom: groundY, capAtBottom: false);
   }
@@ -108,7 +109,7 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
 
   /// Circle-vs-rect collision against either pipe. `b` is the bird's bounds.
   bool collidesWith(({double x, double y, double r}) b) {
-    final groundY = GameConfig.height - GameConfig.groundHeight;
+    const groundY = GameConfig.height - GameConfig.groundHeight;
     final top = Rect.fromLTWH(position.x, 0, _w, topPipeBottom);
     final bottom = Rect.fromLTWH(position.x, bottomPipeTop, _w, groundY - bottomPipeTop);
     return _circleHitsRect(b, top) || _circleHitsRect(b, bottom);

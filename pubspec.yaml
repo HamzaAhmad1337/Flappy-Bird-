@@ -17,7 +17,10 @@ dependencies:
   # 2D game engine — rendering loop, components, camera.
   flame: ^1.18.0
 
-  # Persists the player's best score between sessions.
+  # Sound effects (real synthesized WAV assets ship in assets/audio/).
+  flame_audio: ^2.10.1
+
+  # Persists best score, coin wallet, unlocked skins and settings.
   shared_preferences: ^2.2.3
 
   # Nice app icon / bird colors etc.
@@ -34,11 +37,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # All art is drawn procedurally on the canvas, so no image assets are
-  # required to run the game. If you later add sound effects, declare an
-  # assets/audio/ folder here and see lib/services/sfx.dart.
-  # assets:
-  #   - assets/audio/
+  # All visual art is drawn procedurally on the canvas. The only bundled
+  # assets are the synthesized sound effects and the source app icon.
+  assets:
+    - assets/audio/
+    - assets/icon/
 
 # Configuration for flutter_launcher_icons (run: dart run flutter_launcher_icons).
 # Drop a 1024x1024 PNG at assets/icon/icon.png before running.

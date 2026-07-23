@@ -29,6 +29,41 @@ class UiKit {
       );
 }
 
+/// A little golden coin balance pill.
+class CoinPill extends StatelessWidget {
+  const CoinPill({super.key, required this.count, this.big = false});
+  final int count;
+  final bool big;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = big ? 22.0 : 16.0;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: big ? 16 : 12, vertical: big ? 8 : 5),
+      decoration: BoxDecoration(
+        color: const Color(0xCC102A3B),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0x55FFD447)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: s, height: s,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(colors: [Color(0xFFFFF3B0), Color(0xFFFFC93C)]),
+            ),
+            child: Icon(Icons.star_rounded, size: s * 0.7, color: const Color(0x778A5D00)),
+          ),
+          SizedBox(width: big ? 8 : 6),
+          Text('$count', style: UiKit.label(big ? 20 : 15)),
+        ],
+      ),
+    );
+  }
+}
+
 /// A frosted, rounded card used by the menus.
 class GlassPanel extends StatelessWidget {
   const GlassPanel({super.key, required this.child, this.padding});

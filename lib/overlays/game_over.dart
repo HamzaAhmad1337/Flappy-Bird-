@@ -56,6 +56,18 @@ class _GameOverMenuState extends State<GameOverMenu> with SingleTickerProviderSt
               _ScoreRow(label: 'SCORE', value: score),
               const SizedBox(height: 8),
               _ScoreRow(label: 'BEST', value: best),
+              if (widget.game.runCoins > 0) ...[
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_rounded, color: Color(0xFFFFD447), size: 20),
+                    CoinPill(count: widget.game.runCoins),
+                    const SizedBox(width: 8),
+                    Text('collected', style: UiKit.label(13, color: Colors.white.withValues(alpha: 0.6))),
+                  ],
+                ),
+              ],
               if (isNewBest) ...[
                 const SizedBox(height: 10),
                 Container(

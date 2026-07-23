@@ -48,6 +48,28 @@ class GameConfig {
   static const double gapShrinkPerPoint = 1.1;
   static const double minGap = 152;
 
+  // ---- Collectibles --------------------------------------------------------
+  static const double coinRadius = 15;
+  static const double coinSpawnChance = 0.7; // per pipe
+  static const double powerupRadius = 20;
+  static const double powerupSpawnChance = 0.16; // per pipe
+  static const double magnetRadius = 150; // pull range when magnet active
+
+  // ---- Power-up durations (seconds) ----------------------------------------
+  static const double shieldDuration = 12;
+  static const double slowmoDuration = 6;
+  static const double magnetDuration = 9;
+  static const double slowmoFactor = 0.45; // time scale while slow-mo active
+
+  // ---- Juice ---------------------------------------------------------------
+  static const double nearMissDist = 26; // proximity for a "close call"
+  static const double nearMissSlowmo = 0.35; // brief bullet-time on near miss
+  static const double shakeOnHit = 16;
+  static const double shakeOnShield = 9;
+
+  // ---- Day / night cycle ---------------------------------------------------
+  static const double dayCycleSeconds = 75; // full dawn→day→dusk→night loop
+
   static const String highScoreKey = 'flappy_rain_highscore_v1';
 
   // ---- Palette -------------------------------------------------------------
@@ -69,3 +91,25 @@ class GameConfig {
 }
 
 enum GameState { menu, playing, paused, gameOver }
+
+enum PowerType { shield, slowmo, magnet }
+
+extension PowerTypeInfo on PowerType {
+  String get label => switch (this) {
+        PowerType.shield => 'Shield',
+        PowerType.slowmo => 'Slow-Mo',
+        PowerType.magnet => 'Magnet',
+      };
+
+  Color get color => switch (this) {
+        PowerType.shield => const Color(0xFF4FC3F7),
+        PowerType.slowmo => const Color(0xFFBA68C8),
+        PowerType.magnet => const Color(0xFFFF7043),
+      };
+
+  double get duration => switch (this) {
+        PowerType.shield => GameConfig.shieldDuration,
+        PowerType.slowmo => GameConfig.slowmoDuration,
+        PowerType.magnet => GameConfig.magnetDuration,
+      };
+}

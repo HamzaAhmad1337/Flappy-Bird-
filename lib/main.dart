@@ -8,6 +8,9 @@ import 'overlays/game_over.dart';
 import 'overlays/hud.dart';
 import 'overlays/main_menu.dart';
 import 'overlays/pause_menu.dart';
+import 'overlays/settings.dart';
+import 'overlays/shop.dart';
+import 'services/sfx.dart';
 import 'services/storage.dart';
 
 Future<void> main() async {
@@ -21,6 +24,7 @@ Future<void> main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   await Storage.init();
+  await Sfx.init(); // preload synthesized sound effects (fails silently)
 
   runApp(const FlappyRainApp());
 }
@@ -83,6 +87,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             'hud': (_, game) => Hud(game: game),
             'pauseMenu': (_, game) => PauseMenu(game: game),
             'gameOver': (_, game) => GameOverMenu(game: game),
+            'shop': (_, game) => Shop(game: game),
+            'settings': (_, game) => Settings(game: game),
           },
         ),
       ),

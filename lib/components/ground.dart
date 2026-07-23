@@ -38,7 +38,7 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
   @override
   void render(Canvas canvas) {
     // Dirt base.
-    final dirtRect = Rect.fromLTWH(0, 0, _w, _h);
+    const dirtRect = Rect.fromLTWH(0, 0, _w, _h);
     final dirt = Paint()
       ..shader = ui.Gradient.linear(
         dirtRect.topLeft,
@@ -56,8 +56,8 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
     }
 
     // Grass strip along the top with a scalloped lower edge.
-    final grassH = 26.0;
-    final grassRect = Rect.fromLTWH(0, 0, _w, grassH);
+    const grassH = 26.0;
+    const grassRect = Rect.fromLTWH(0, 0, _w, grassH);
     final grass = Paint()
       ..shader = ui.Gradient.linear(
         grassRect.topLeft,
@@ -79,13 +79,13 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
 
     // A darker line where grass meets dirt.
     canvas.drawRect(
-      Rect.fromLTWH(0, grassH + 4, _w, 2),
+      const Rect.fromLTWH(0, grassH + 4, _w, 2),
       Paint()..color = Colors.black.withValues(alpha: 0.12),
     );
 
     // Wet sheen highlight near the top (it's raining).
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, _w, 3),
+      const Rect.fromLTWH(0, 0, _w, 3),
       Paint()..color = Colors.white.withValues(alpha: 0.18),
     );
   }

@@ -87,7 +87,7 @@ class Lightning extends PositionComponent {
     if (_flash > 0) {
       final paint = Paint()
         ..color = Colors.white.withValues(alpha: _flash * 0.35);
-      canvas.drawRect(Rect.fromLTWH(0, 0, _w, _h), paint);
+      canvas.drawRect(const Rect.fromLTWH(0, 0, _w, _h), paint);
     }
     if (_bolt != null && _boltLife > 0) {
       final a = (_boltLife / 0.35).clamp(0.0, 1.0);

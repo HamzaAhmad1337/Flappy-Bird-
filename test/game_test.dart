@@ -10,7 +10,7 @@ void main() {
     test('a flap always overcomes one frame of gravity', () {
       // At 60fps a single frame adds gravity/60 downward velocity; the flap
       // impulse must be strong enough to visibly lift the bird.
-      final oneFrameGravity = GameConfig.gravity / 60;
+      const oneFrameGravity = GameConfig.gravity / 60;
       expect(GameConfig.flapVelocity.abs(), greaterThan(oneFrameGravity));
     });
 
@@ -23,7 +23,7 @@ void main() {
     });
 
     test('the pipe gap always fits between the margins', () {
-      final playable = GameConfig.height -
+      const playable = GameConfig.height -
           GameConfig.groundHeight -
           2 * GameConfig.pipeMinMargin;
       expect(GameConfig.minGap, lessThan(playable));
