@@ -1,0 +1,51 @@
+name: flappy_rain
+description: "Flappy Rain — a beautiful, storm-themed Flappy Bird game built with Flutter & Flame."
+publish_to: "none"
+
+# App version. Format is <marketing-version>+<build-number>.
+# Bump the build number (after the +) for every store upload.
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 2D game engine — rendering loop, components, camera.
+  flame: ^1.18.0
+
+  # Persists the player's best score between sessions.
+  shared_preferences: ^2.2.3
+
+  # Nice app icon / bird colors etc.
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+  # Generates launcher icons for Android & iOS from a single source image.
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  # All art is drawn procedurally on the canvas, so no image assets are
+  # required to run the game. If you later add sound effects, declare an
+  # assets/audio/ folder here and see lib/services/sfx.dart.
+  # assets:
+  #   - assets/audio/
+
+# Configuration for flutter_launcher_icons (run: dart run flutter_launcher_icons).
+# Drop a 1024x1024 PNG at assets/icon/icon.png before running.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#0E2233"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+  remove_alpha_ios: true
