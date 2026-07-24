@@ -25,6 +25,11 @@ editor, so the whole look is editable in code.
   lit by the sun, atmospheric gradient, god rays, sun/moon bloom and stars.
 - **Cinematic lens pass** (`shaders/lens.frag`) — rain beading and running down
   the glass, vignette, chromatic fringing, film grain and lightning bloom.
+- **Wet-ground reflections** — the pipes and bird mirror into the rain-soaked
+  ground, squashed, rippled and faded with depth.
+- **Ambient life** — fireflies that pulse at night, sunlit motes by day, and
+  mist rolling along the ground.
+- **Aurora and shooting stars** on the night side of the day/night cycle.
 - **Graceful degradation**: if a texture or shader fails to load on a device,
   each component silently falls back to its hand-drawn canvas version, so the
   game always renders.
@@ -48,6 +53,18 @@ editor, so the whole look is editable in code.
   impact.
 - **Rendered pipes & ground** — weathered metal tubes with rust and moss, and a
   seamlessly tiling rocky embankment.
+
+**Progression & goals**
+- **Daily reward with a visible streak ladder** — escalating coins for coming
+  back, capped so it never becomes a chore.
+- **Three daily missions** that rotate at midnight (score, coins, near-misses,
+  combos, power-ups), each paying coins.
+- **12 achievements** and a **7-tier rank** (Fledgling → Legend) with progress
+  toward the next tier always on screen.
+- **Instant retry** — tap anywhere on the game-over screen to go again, and
+  when you fall just short it tells you exactly how many more you needed.
+- **Milestone celebrations** — confetti and a banner every 10 pipes, and the
+  moment you overtake your own record mid-run.
 
 **Meta & polish**
 - **Bird shop** — 8 unlockable skins (Robin, Blue Jay, Phoenix, Midas…) bought
@@ -82,9 +99,13 @@ lib/
 │   ├── floating_text.dart     # Score / combo pop-ups
 │   ├── sky_shader.dart        # Volumetric sky (GPU)
 │   └── lens_overlay.dart      # Rain-on-lens / vignette / grain (GPU)
-├── overlays/                  # Flutter UI: menu, HUD, pause, game over, shop, settings
+│   ├── reflections.dart       # Wet-ground mirror of pipes & bird
+│   └── ambience.dart          # Fireflies / motes / ground mist
+├── overlays/                  # menu, HUD, pause, game over, shop, settings,
+│                              # missions/awards, daily reward
 └── services/
     ├── storage.dart           # Save data (score, coins, skins, settings)
+    ├── progression.dart       # Daily rewards, missions, achievements, ranks
     ├── assets.dart            # Loads baked sprites + shaders (fails soft)
     └── sfx.dart               # Sound effects + haptics
 shaders/
@@ -98,6 +119,7 @@ tools/
 assets/
 ├── models/                    # Baked 3D sprite sheets & tiling textures
 ├── audio/                     # Synthesized WAV sound effects
+├── fonts/                     # Bundled UI font (SIL OFL, see LICENSE.txt)
 └── icon/icon.png              # Source app icon
 ```
 

@@ -34,6 +34,27 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
         builder: (context, _) {
           return Stack(
             children: [
+              // Flap surface.
+              //
+              // Input lives here rather than on a GestureDetector wrapping the
+              // GameWidget: taps only reliably reach Flutter *overlay* widgets,
+              // and handling them in the state's own overlay keeps each screen
+              // owning its input. The pause corner is carved out of the layout
+              // so pressing it can never also flap.
+              Column(
+                children: [
+                  SizedBox(
+                    height: 76,
+                    child: Row(
+                      children: [
+                        Expanded(child: _FlapArea(game: game)),
+                        const SizedBox(width: 76), // pause button corner
+                      ],
+                    ),
+                  ),
+                  Expanded(child: _FlapArea(game: game)),
+                ],
+              ),
               // Score.
               Align(
                 alignment: Alignment.topCenter,
@@ -41,10 +62,9 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
                   padding: const EdgeInsets.only(top: 18),
                   child: Column(
                     children: [
-                      Text('${game.score.value}', style: UiKit.title(56)),
+                      _PoppingScore(score: game.score.value),
                       if (game.comboCount >= 3)
-                        Text('COMBO x${game.comboCount}',
-                            style: UiKit.label(16, color: UiKit.accent)),
+                        _ComboFlame(combo: game.comboCount),
                     ],
                   ),
                 ),
@@ -94,6 +114,88 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
           );
         },
       ),
+    );
+  }
+}
+
+/// A transparent region that flaps the instant it is pressed.
+///
+/// Deliberately a [Listener] rather than a GestureDetector: a tap *gesture*
+/// has to win the gesture arena before it reports, which can delay or drop it
+/// when other recognizers are in the tree. What we want here is the raw
+/// "screen was pressed" signal, which is also the lowest-latency option. The
+/// pause button is excluded by layout, so nothing competes for this area.
+class _FlapArea extends StatelessWidget {
+  const _FlapArea({required this.game});
+  final FlappyGame game;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (_) => game.flapInput(),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+/// The score, which punches up briefly each time it changes.
+class _PoppingScore extends StatefulWidget {
+  const _PoppingScore({required this.score});
+  final int score;
+
+  @override
+  State<_PoppingScore> createState() => _PoppingScoreState();
+}
+
+class _PoppingScoreState extends State<_PoppingScore>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 260));
+
+  @override
+  void didUpdateWidget(covariant _PoppingScore old) {
+    super.didUpdateWidget(old);
+    if (old.score != widget.score) _c.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, child) {
+        // Quick overshoot then settle.
+        final t = Curves.easeOut.transform(_c.value);
+        final scale = 1.0 + 0.28 * (1 - t) * (_c.isAnimating ? 1 : 0);
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: Text('${widget.score}', style: UiKit.title(56)),
+    );
+  }
+}
+
+/// Combo readout with a flame that grows as the streak climbs.
+class _ComboFlame extends StatelessWidget {
+  const _ComboFlame({required this.combo});
+  final int combo;
+
+  @override
+  Widget build(BuildContext context) {
+    final heat = (combo / 15).clamp(0.0, 1.0);
+    final color = Color.lerp(UiKit.accent, const Color(0xFFFF5B3B), heat)!;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.local_fire_department_rounded, color: color, size: 16 + heat * 6),
+        const SizedBox(width: 4),
+        Text('COMBO x$combo', style: UiKit.label(16, color: color)),
+      ],
     );
   }
 }

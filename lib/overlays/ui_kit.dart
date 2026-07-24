@@ -8,9 +8,10 @@ class UiKit {
   static const Color panel = Color(0xF2102A3B);
   static const Color panelBorder = Color(0x33FFFFFF);
 
-  static const String fontFamily = 'Roboto';
+  static const String fontFamily = 'Display';
 
   static TextStyle title(double size) => TextStyle(
+        fontFamily: fontFamily,
         fontSize: size,
         fontWeight: FontWeight.w900,
         color: Colors.white,
@@ -22,6 +23,7 @@ class UiKit {
       );
 
   static TextStyle label(double size, {Color color = Colors.white}) => TextStyle(
+        fontFamily: fontFamily,
         fontSize: size,
         fontWeight: FontWeight.w700,
         color: color,

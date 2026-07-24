@@ -119,6 +119,45 @@ void main() {
         }
     }
 
+    // Aurora — slow ribbons of light on clear-ish nights. Purely decorative,
+    // but it makes the night half of the cycle something to look forward to.
+    if (night > 0.25) {
+        float aur = 0.0;
+        for (int i = 0; i < 3; i++) {
+            float fi = float(i);
+            float band = 0.20 + fi * 0.075;
+            // A wavering horizontal ribbon that drifts sideways over time.
+            float wave = sin(uv.x * (5.0 + fi * 2.5) + uTime * (0.25 + fi * 0.12)
+                             + fbm(vec2(uv.x * 3.0, uTime * 0.06)) * 3.0) * 0.045;
+            float d = abs(uv.y - (band + wave));
+            aur += smoothstep(0.055, 0.0, d) * (0.55 - fi * 0.13);
+        }
+        vec3 auroraCol = mix(vec3(0.25, 0.95, 0.65), vec3(0.45, 0.55, 1.00),
+                             0.5 + 0.5 * sin(uTime * 0.2));
+        col += auroraCol * aur * night * 0.45;
+    }
+
+    // Shooting stars: a rare streak that crosses the upper sky.
+    if (night > 0.35) {
+        float cycle = 6.0;               // one candidate every few seconds
+        float idx = floor(uTime / cycle);
+        float local = fract(uTime / cycle);
+        float seed = hash(vec2(idx, 3.0));
+        if (seed > 0.55) {               // …and only some of them appear
+            vec2 start = vec2(0.15 + hash(vec2(idx, 7.0)) * 0.7, 0.06 + hash(vec2(idx, 11.0)) * 0.18);
+            vec2 dir = normalize(vec2(-0.85, 0.42));
+            float travel = local * 1.6;
+            vec2 head = start + dir * travel;
+            vec2 rel = (uv - head) * vec2(aspect, 1.0);
+            // Distance to the trail behind the head.
+            float along = clamp(dot(rel, -dir), 0.0, 0.14);
+            float perp = length(rel + dir * along);
+            float streak = smoothstep(0.006, 0.0, perp) * (1.0 - along / 0.14);
+            float fade = smoothstep(0.0, 0.1, local) * smoothstep(1.0, 0.7, local);
+            col += vec3(0.9, 0.95, 1.0) * streak * fade * night * 1.3;
+        }
+    }
+
     // Sun / moon disc + bloom halo.
     vec3 sunCol = mix(vec3(0.85, 0.90, 1.00), vec3(1.00, 0.93, 0.72), dayness);
     float disc = smoothstep(0.055, 0.040, sunDist);

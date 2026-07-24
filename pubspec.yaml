@@ -44,6 +44,17 @@ flutter:
     - assets/icon/
     - assets/models/
 
+  # Bundling the UI font keeps typography identical on Android and iOS instead
+  # of falling back to each platform's default sans. Liberation Sans is SIL
+  # OFL-licensed (see assets/fonts/LICENSE.txt).
+  fonts:
+    - family: Display
+      fonts:
+        - asset: assets/fonts/LiberationSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/LiberationSans-Regular.ttf
+          weight: 400
+
   shaders:
     - shaders/sky.frag
     - shaders/lens.frag

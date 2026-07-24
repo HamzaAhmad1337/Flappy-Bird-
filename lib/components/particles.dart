@@ -113,6 +113,28 @@ class ParticleField extends PositionComponent {
     }
   }
 
+  /// A celebratory shower of coloured ribbons that flutter as they fall.
+  void confetti(double x, double y, {int count = 30}) {
+    const palette = [
+      Color(0xFFFFD447), Color(0xFF7FC4FF), Color(0xFFFF7A9C),
+      Color(0xFF9BF6D8), Color(0xFFE5B3FF), Color(0xFFFFFFFF),
+    ];
+    for (int i = 0; i < count; i++) {
+      final ang = -pi / 2 + (_rng.nextDouble() - 0.5) * 2.4;
+      final sp = 160 + _rng.nextDouble() * 260;
+      _parts.add(_P(
+        x: x, y: y,
+        vx: cos(ang) * sp, vy: sin(ang) * sp,
+        gravity: 520, drag: 0.985,
+        life: 0.9 + _rng.nextDouble() * 0.7, maxLife: 1.6,
+        size: 3 + _rng.nextDouble() * 3.5,
+        color: palette[_rng.nextInt(palette.length)], alpha: 1.0,
+        rot: _rng.nextDouble() * pi, spin: (_rng.nextDouble() - 0.5) * 18,
+        kind: _Kind.spark,
+      ));
+    }
+  }
+
   void clear() => _parts.clear();
 }
 

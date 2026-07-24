@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flappy_rain/game/config.dart';
+import 'package:flappy_rain/game/flappy_game.dart';
 import 'package:flappy_rain/game/skins.dart';
 
 void main() {
@@ -31,6 +32,31 @@ void main() {
           GameConfig.groundHeight -
           2 * GameConfig.pipeMinMargin;
       expect(GameConfig.minGap, lessThan(playable));
+    });
+  });
+
+  group('frame timing', () {
+    // Regression: an unbounded frame step used to apply hundreds of ms of
+    // gravity at once (the hitch when overlays rebuild as a run starts), which
+    // teleported the bird into the ground and ended the run instantly.
+    test('a long frame cannot move the bird further than the playable height', () {
+      const step = FlappyGame.maxTimeStep;
+      // Worst case: already at terminal velocity for one clamped step.
+      const worstDrop = GameConfig.maxFallSpeed * step;
+      const playable = GameConfig.height - GameConfig.groundHeight;
+      expect(worstDrop, lessThan(playable / 4),
+          reason: 'one clamped step must be a small fraction of the screen');
+    });
+
+    test('the clamp is small enough to stay responsive', () {
+      // Still at least ~30fps of simulation, so gameplay is not slowed visibly.
+      expect(FlappyGame.maxTimeStep, lessThanOrEqualTo(1 / 30 + 1e-9));
+      expect(FlappyGame.maxTimeStep, greaterThan(0));
+    });
+
+    test('a flap out-climbs one clamped step of gravity', () {
+      const gained = GameConfig.gravity * FlappyGame.maxTimeStep;
+      expect(GameConfig.flapVelocity.abs(), greaterThan(gained));
     });
   });
 
