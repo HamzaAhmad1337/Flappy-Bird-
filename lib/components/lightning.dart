@@ -4,10 +4,11 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../game/config.dart';
+import '../game/flappy_game.dart';
 
 /// Occasional lightning: a bright full-screen flash paired with a jagged bolt
 /// that forks down the sky. Timed randomly for an unpredictable storm feel.
-class Lightning extends PositionComponent {
+class Lightning extends PositionComponent with HasGameReference<FlappyGame> {
   Lightning() : super(priority: 90);
 
   final Random _rng = Random();
@@ -77,6 +78,8 @@ class Lightning extends PositionComponent {
     if (_flash > 0) {
       _flash = max(0, _flash - dt * 3.2);
     }
+    // Share the flash so the sky and lens passes light up with the bolt.
+    game.lightningFlash = _flash;
     if (_boltLife > 0) {
       _boltLife = max(0, _boltLife - dt);
     }

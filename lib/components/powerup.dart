@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import '../services/assets.dart';
 
 /// A floating power-up capsule. Bobs and glows in its type color, scrolls with
 /// the world, and grants its effect when the bird touches it.
@@ -48,13 +49,25 @@ class PowerUp extends PositionComponent with HasGameReference<FlappyGame> {
         ..color = type.color.withValues(alpha: 0.25)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
-    // Capsule body.
-    final body = Paint()
-      ..shader = ui.Gradient.radial(
-        const Offset(-5, -5), r * 1.8,
-        [Color.lerp(type.color, Colors.white, 0.5)!, type.color],
+    // Body: the offline-rendered glass orb, modulated to the type colour.
+    final orb = GameAssets.image('orb');
+    if (orb != null) {
+      canvas.drawImageRect(
+        orb,
+        Rect.fromLTWH(0, 0, orb.width.toDouble(), orb.height.toDouble()),
+        Rect.fromCenter(center: Offset.zero, width: r * 2.3, height: r * 2.3),
+        Paint()
+          ..filterQuality = FilterQuality.high
+          ..colorFilter = ColorFilter.mode(type.color, BlendMode.modulate),
       );
-    canvas.drawCircle(Offset.zero, r, body);
+    } else {
+      final body = Paint()
+        ..shader = ui.Gradient.radial(
+          const Offset(-5, -5), r * 1.8,
+          [Color.lerp(type.color, Colors.white, 0.5)!, type.color],
+        );
+      canvas.drawCircle(Offset.zero, r, body);
+    }
     canvas.drawCircle(
       Offset.zero, r,
       Paint()

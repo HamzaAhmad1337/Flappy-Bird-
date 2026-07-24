@@ -70,6 +70,13 @@ class GameConfig {
   // ---- Day / night cycle ---------------------------------------------------
   static const double dayCycleSeconds = 75; // full dawn→day→dusk→night loop
 
+  // ---- Rendering -----------------------------------------------------------
+  static const double lensWetness = 0.85; // rain-on-lens strength (0..1)
+  static const double stormIntensity = 0.72; // cloud density / sky darkening
+  static const int birdSheetFrames = 8;
+  static const int coinSheetFrames = 8;
+  static const double birdSpriteScale = 3.5; // sprite width = radius * this
+
   static const String highScoreKey = 'flappy_rain_highscore_v1';
 
   // ---- Palette -------------------------------------------------------------

@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flappy_rain/game/config.dart';
+import 'package:flappy_rain/game/skins.dart';
 
 void main() {
   group('GameConfig sanity', () {
@@ -29,4 +33,52 @@ void main() {
       expect(GameConfig.minGap, lessThan(playable));
     });
   });
+
+  _assetTests();
+}
+
+// ---------------------------------------------------------------------------
+// Baked-asset pipeline
+// ---------------------------------------------------------------------------
+void _assetTests() {
+  group('baked 3D assets', () {
+    test('every bird skin has a rendered sprite sheet', () {
+      for (final skin in Skins.all) {
+        final f = File('assets/models/bird_${skin.id}.png');
+        expect(f.existsSync(), isTrue,
+            reason: 'missing sprite sheet for skin "${skin.id}" — '
+                'run: python3 tools/gen_models.py bird');
+      }
+    });
+
+    test('shared textures and shaders are present', () {
+      for (final p in [
+        'assets/models/coin.png',
+        'assets/models/orb.png',
+        'assets/models/pipe_body.png',
+        'assets/models/pipe_cap.png',
+        'assets/models/ground.png',
+        'shaders/sky.frag',
+        'shaders/lens.frag',
+      ]) {
+        expect(File(p).existsSync(), isTrue, reason: 'missing $p');
+      }
+    });
+
+    test('sprite sheets divide evenly into their frame count', () {
+      // A sheet whose width isn't a multiple of the frame count would make
+      // every blit sample across a frame boundary.
+      final bird = _pngSize(File('assets/models/bird_classic.png'));
+      expect(bird.$1 % GameConfig.birdSheetFrames, 0);
+      final coin = _pngSize(File('assets/models/coin.png'));
+      expect(coin.$1 % GameConfig.coinSheetFrames, 0);
+    });
+  });
+}
+
+/// Reads width/height straight from the PNG IHDR chunk.
+(int, int) _pngSize(File f) {
+  final b = f.readAsBytesSync();
+  final d = ByteData.sublistView(b);
+  return (d.getUint32(16), d.getUint32(20));
 }

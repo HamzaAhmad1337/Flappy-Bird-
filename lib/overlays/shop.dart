@@ -2,8 +2,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../game/config.dart';
 import '../game/flappy_game.dart';
 import '../game/skins.dart';
+import '../services/assets.dart';
 import '../services/sfx.dart';
 import '../services/storage.dart';
 import 'ui_kit.dart';
@@ -141,7 +143,7 @@ class _SkinCard extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  CustomPaint(size: const Size(72, 60), painter: _BirdPreviewPainter(skin)),
+                  _BirdPreview(skin: skin),
                   if (!unlocked)
                     const Positioned(
                       right: 0, top: 0,
@@ -196,6 +198,55 @@ class _SkinCard extends StatelessWidget {
       child: Text(text, style: UiKit.label(13, color: fg)),
     );
   }
+}
+
+/// Shows the skin's rendered 3D bird, falling back to the painted version if
+/// the sheet isn't available.
+class _BirdPreview extends StatelessWidget {
+  const _BirdPreview({required this.skin});
+  final BirdSkin skin;
+
+  @override
+  Widget build(BuildContext context) {
+    final sheet = GameAssets.birdSheet(skin.id);
+    if (sheet == null) {
+      return CustomPaint(size: const Size(72, 60), painter: _BirdPreviewPainter(skin));
+    }
+    // Show a mid-glide frame from the sheet.
+    return SizedBox(
+      width: 78,
+      height: 66,
+      child: CustomPaint(painter: _SheetFramePainter(sheet, 2)),
+    );
+  }
+}
+
+class _SheetFramePainter extends CustomPainter {
+  _SheetFramePainter(this.sheet, this.frame);
+  final ui.Image sheet;
+  final int frame;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const frames = GameConfig.birdSheetFrames;
+    final fw = sheet.width / frames;
+    final fh = sheet.height.toDouble();
+    // Fit the frame inside the widget, preserving aspect.
+    final scale = (size.width / fw).clamp(0.0, size.height / fh);
+    final w = fw * scale;
+    final h = fh * scale;
+    canvas.drawImageRect(
+      sheet,
+      Rect.fromLTWH(frame * fw, 0, fw, fh),
+      Rect.fromCenter(
+          center: Offset(size.width / 2, size.height / 2), width: w, height: h),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SheetFramePainter old) =>
+      old.sheet != sheet || old.frame != frame;
 }
 
 /// Draws a compact version of the bird using a skin's palette.

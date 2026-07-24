@@ -10,6 +10,7 @@ import 'overlays/main_menu.dart';
 import 'overlays/pause_menu.dart';
 import 'overlays/settings.dart';
 import 'overlays/shop.dart';
+import 'services/assets.dart';
 import 'services/sfx.dart';
 import 'services/storage.dart';
 
@@ -24,7 +25,8 @@ Future<void> main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   await Storage.init();
-  await Sfx.init(); // preload synthesized sound effects (fails silently)
+  await Sfx.init();       // synthesized sound effects (fails silently)
+  await GameAssets.load(); // baked 3D sprites + GPU shaders (fails silently)
 
   runApp(const FlappyRainApp());
 }

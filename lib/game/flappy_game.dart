@@ -11,11 +11,13 @@ import '../components/bird.dart';
 import '../components/coin.dart';
 import '../components/floating_text.dart';
 import '../components/ground.dart';
+import '../components/lens_overlay.dart';
 import '../components/lightning.dart';
 import '../components/particles.dart';
 import '../components/pipe_pair.dart';
 import '../components/powerup.dart';
 import '../components/rain.dart';
+import '../components/sky_shader.dart';
 import '../services/sfx.dart';
 import '../services/storage.dart';
 import 'config.dart';
@@ -79,6 +81,16 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   bool get magnetActive => magnetRemaining > 0;
   double get skyPhase => (_worldTime / GameConfig.dayCycleSeconds) % 1.0;
 
+  // ---- Render-side state (read by the shader layers) -----------------------
+  /// Total distance the world has scrolled — drives sky/cloud parallax.
+  double worldScroll = 0;
+
+  /// 0..1 lightning brightness, published by the Lightning component so the
+  /// sky and lens passes can bloom in sync with the bolt.
+  double lightningFlash = 0;
+
+  double get stormIntensity => GameConfig.stormIntensity;
+
   List<({PowerType type, double remaining})> get activePowers {
     final l = <({PowerType type, double remaining})>[];
     if (shieldRemaining > 0) l.add((type: PowerType.shield, remaining: shieldRemaining));
@@ -103,12 +115,14 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     particles = ParticleField();
 
     world.addAll([
-      background,
+      SkyShaderLayer(),   // volumetric sky (GPU)
+      background,         // mountains / city / haze
       Ground(),
       bird,
       particles,
       Rain(),
       Lightning(),
+      LensOverlay(),      // rain-on-lens, vignette, grain (GPU)
     ]);
 
     best.value = Storage.highScore;
@@ -248,6 +262,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   @override
   void update(double dt) {
     _worldTime += dt;
+    worldScroll += (state == GameState.playing ? scrollSpeed : 26.0) * dt;
     _updatePowerTimers(dt);
     _updateTimeScale(dt);
     _updateShake(dt);

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import 'sky_shader.dart';
 
 /// A layered, parallax-scrolling storm sky with a full day → night cycle:
 /// a shifting gradient, sun/moon crossfade, twinkling stars, mountains, a city
@@ -95,10 +96,14 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     final dayness = (0.5 + 0.5 * cos((phase - 0.25) * 2 * pi)).clamp(0.0, 1.0);
     final nightAmount = 1 - dayness;
 
-    _paintSky(canvas, phase);
-    _paintStars(canvas, nightAmount);
-    _paintCelestial(canvas, dayness, nightAmount, phase);
-    _paintClouds(canvas, dayness);
+    // When the GPU sky is active it already renders the gradient, sun/moon,
+    // stars and volumetric clouds — we only add the terrain silhouettes on top.
+    if (!SkyShaderLayer.available) {
+      _paintSky(canvas, phase);
+      _paintStars(canvas, nightAmount);
+      _paintCelestial(canvas, dayness, nightAmount, phase);
+      _paintClouds(canvas, dayness);
+    }
     _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360, nightAmount);
     _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300, nightAmount);
     _paintCity(canvas, nightAmount);

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import '../services/assets.dart';
 
 /// A top + bottom pipe with a gap between them. Scrolls left at the game's
 /// current speed and reports when the bird has passed it (for scoring).
@@ -43,6 +45,17 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
   }
 
   void _drawPipe(Canvas canvas, {required double top, required double bottom, required bool capAtBottom}) {
+    if (bottom <= top) return;
+
+    // Preferred path: the offline-rendered weathered metal tube.
+    final bodyTex = GameAssets.image('pipe_body');
+    final capTex = GameAssets.image('pipe_cap');
+    if (bodyTex != null && capTex != null) {
+      _drawTextured(canvas, bodyTex, capTex,
+          top: top, bottom: bottom, capAtBottom: capAtBottom);
+      return;
+    }
+
     final bodyRect = Rect.fromLTWH(0, top, _w, bottom - top);
 
     // Rounded body with a left-lit gradient for a tube-like sheen.
@@ -105,6 +118,55 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
         ..strokeWidth = 1.2
         ..color = GameConfig.pipeDark.withValues(alpha: 0.45),
     );
+  }
+
+  /// Draws a pipe from the baked textures: the body tiles down its length and
+  /// the rendered lip caps the mouth.
+  void _drawTextured(
+    Canvas canvas,
+    ui.Image body,
+    ui.Image cap, {
+    required double top,
+    required double bottom,
+    required bool capAtBottom,
+  }) {
+    // One texture tile covers this many logical pixels along the pipe.
+    const tile = 150.0;
+    // A repeating shader wraps seamlessly; manual tiling clamps at the texture
+    // edge and leaves a seam at every repeat.
+    // Column-major 4x4: scale the texture to the pipe's width / tile length,
+    // then slide it to the pipe's top. (Hand-built because `Matrix4` is
+    // ambiguous here — Flame and Flutter both export one.)
+    final sx = _w / body.width;
+    final sy = tile / body.height;
+    final m = Float64List.fromList([
+      sx, 0, 0, 0,
+      0, sy, 0, 0,
+      0, 0, 1, 0,
+      0, top, 0, 1,
+    ]);
+    final paint = Paint()
+      ..filterQuality = FilterQuality.medium
+      ..shader = ImageShader(
+        body, TileMode.clamp, TileMode.repeated, m,
+        filterQuality: FilterQuality.medium,
+      );
+    canvas.drawRect(Rect.fromLTWH(0, top, _w, bottom - top), paint);
+
+    // Cap: drawn wider than the body, flipped for the upper pipe.
+    const cw = _w + 16;
+    const ch = _cap + 8;
+    final capY = capAtBottom ? bottom - ch + 4 : top - 4;
+    canvas.save();
+    canvas.translate(_w / 2, capY + ch / 2);
+    if (!capAtBottom) canvas.scale(1, -1);
+    canvas.drawImageRect(
+      cap,
+      Rect.fromLTWH(0, 0, cap.width.toDouble(), cap.height.toDouble()),
+      Rect.fromCenter(center: Offset.zero, width: cw, height: ch),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    canvas.restore();
   }
 
   /// Circle-vs-rect collision against either pipe. `b` is the bird's bounds.

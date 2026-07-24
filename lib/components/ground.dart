@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import '../services/assets.dart';
 
 /// A seamless, scrolling ground strip: a grassy top edge over wet dirt with
 /// texture flecks. Scrolls at the game speed and loops forever.
@@ -37,6 +39,37 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
 
   @override
   void render(Canvas canvas) {
+    // Preferred path: the offline-rendered wet embankment.
+    //
+    // Drawn with a repeating ImageShader rather than tile-by-tile blits: manual
+    // tiling clamps at the texture edges and leaves a visible seam at every
+    // repeat, whereas TileMode.repeated wraps correctly on the GPU (and is a
+    // single draw call).
+    final tex = GameAssets.image('ground');
+    if (tex != null) {
+      const tile = 192.0; // logical px per texture repeat
+      // Column-major 4x4: scale texture -> tile size, then translate by the
+      // scroll offset. (Built by hand because `Matrix4` is ambiguous here:
+      // Flame exports vector_math while Flutter exports vector_math_64.)
+      final sx = tile / tex.width;
+      final sy = _h / tex.height;
+      final tx = -(_offset % tile);
+      final m = Float64List.fromList([
+        sx, 0, 0, 0,
+        0, sy, 0, 0,
+        0, 0, 1, 0,
+        tx, 0, 0, 1,
+      ]);
+      final paint = Paint()
+        ..filterQuality = FilterQuality.medium
+        ..shader = ImageShader(
+          tex, TileMode.repeated, TileMode.clamp, m,
+          filterQuality: FilterQuality.medium,
+        );
+      canvas.drawRect(const Rect.fromLTWH(0, 0, _w, _h), paint);
+      return;
+    }
+
     // Dirt base.
     const dirtRect = Rect.fromLTWH(0, 0, _w, _h);
     final dirt = Paint()

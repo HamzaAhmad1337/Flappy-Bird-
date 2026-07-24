@@ -4,11 +4,30 @@ A beautiful, storm-themed Flappy Bird game built with **Flutter** and the
 **Flame** game engine — a real native app you can ship to both the **Google
 Play Store** and the **Apple App Store** from a single codebase.
 
-Everything you see is drawn procedurally on the canvas (no heavy image
-assets), so the app is small, sharp at every resolution, and fully editable in
-code.
+Every asset is **generated from source** — the 3D models are raytraced offline
+by a small PBR renderer, the sky and lens effects are real GPU fragment
+shaders, and the sound is synthesized. Nothing was hand-painted in a binary
+editor, so the whole look is editable in code.
 
 ## ✨ Features
+
+**Graphics — baked 3D + GPU shaders**
+- **Real 3D models, offline-raytraced.** Every character and prop is a
+  signed-distance-field model rendered by `tools/render3d.py` with
+  Cook-Torrance GGX PBR shading, soft shadows, ambient occlusion, bump-mapped
+  surface detail and ACES tonemapping — then baked to sprite sheets. The bird
+  has feather relief and a wing that casts a shadow on its body; the coin is
+  milled gold with an embossed star; the pipes are weathered, rusted metal.
+- **Skin re-tinting for free.** The bird is rendered *once* into separate
+  lighting buffers (diffuse / specular / material mask), so all 8 skins are
+  produced from one raymarch — and every skin keeps the same real lighting.
+- **Volumetric sky shader** (`shaders/sky.frag`) — raymarched FBM cloud layers
+  lit by the sun, atmospheric gradient, god rays, sun/moon bloom and stars.
+- **Cinematic lens pass** (`shaders/lens.frag`) — rain beading and running down
+  the glass, vignette, chromatic fringing, film grain and lightning bloom.
+- **Graceful degradation**: if a texture or shader fails to load on a device,
+  each component silently falls back to its hand-drawn canvas version, so the
+  game always renders.
 
 **World & atmosphere**
 - **Full day → night cycle** — the sky continuously shifts through dawn, day,
@@ -19,16 +38,16 @@ code.
 - **Lightning** — random flashes and forked bolts light up the sky.
 
 **Gameplay & juice**
-- **A hand-drawn bird** — glossy body, flapping wing, velocity-based tilt and a
-  flight trail.
+- **A 3D-rendered bird** — feather relief, a flapping wing that shadows the
+  body, velocity-based tilt and a flight trail.
 - **Collectible coins** — a real coin wallet that persists between sessions.
 - **Power-ups** — 🛡️ Shield (survive a hit), ⏳ Slow-Mo (bullet time), and
   🧲 Magnet (vacuum up coins), each with live HUD timers.
 - **Combos** — chain pipes for combo call-outs and bonus coins.
 - **Near-miss bullet-time**, **screen shake**, and a burst of feathers on
   impact.
-- **Polished pipes & ground** — gradient "tube" pipes with wet highlights and a
-  seamlessly scrolling grassy ground.
+- **Rendered pipes & ground** — weathered metal tubes with rust and moss, and a
+  seamlessly tiling rocky embankment.
 
 **Meta & polish**
 - **Bird shop** — 8 unlockable skins (Robin, Blue Jay, Phoenix, Midas…) bought
@@ -60,15 +79,39 @@ lib/
 │   ├── ground.dart            # Scrolling ground
 │   ├── coin.dart / powerup.dart
 │   ├── particles.dart         # Feathers, sparkles, bursts, trails
-│   └── floating_text.dart     # Score / combo pop-ups
+│   ├── floating_text.dart     # Score / combo pop-ups
+│   ├── sky_shader.dart        # Volumetric sky (GPU)
+│   └── lens_overlay.dart      # Rain-on-lens / vignette / grain (GPU)
 ├── overlays/                  # Flutter UI: menu, HUD, pause, game over, shop, settings
 └── services/
     ├── storage.dart           # Save data (score, coins, skins, settings)
+    ├── assets.dart            # Loads baked sprites + shaders (fails soft)
     └── sfx.dart               # Sound effects + haptics
+shaders/
+├── sky.frag                   # Volumetric clouds, god rays, stars
+└── lens.frag                  # Rain on glass, vignette, grain, bloom
+tools/
+├── render3d.py                # SDF raymarcher: PBR, soft shadows, AO
+├── gen_models.py              # The 3D models + bake targets
+├── gen_audio.py               # Sound-effect synthesis
+└── gen_icon.py                # App icon
 assets/
+├── models/                    # Baked 3D sprite sheets & tiling textures
 ├── audio/                     # Synthesized WAV sound effects
 └── icon/icon.png              # Source app icon
 ```
+
+### Regenerating the art
+
+All art is generated from source — nothing is hand-painted in a binary editor:
+
+```bash
+pip install numpy pillow
+python3 tools/gen_models.py          # everything (~7 min)
+python3 tools/gen_models.py coin     # or just one target
+```
+
+Edit a model in `tools/gen_models.py` (they're plain SDF math) and re-run.
 
 Tune everything in **`lib/game/config.dart`** — gravity, flap strength, pipe
 gap/speed, rain density, difficulty ramp, coin/power-up rates, day length, and

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../game/config.dart';
 import '../game/flappy_game.dart';
 import '../game/skins.dart';
+import '../services/assets.dart';
 
 /// The player's bird. Handles gravity/velocity, tilts toward its direction of
 /// travel, and draws a glossy bird using the currently selected skin — with an
@@ -90,6 +91,40 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
 
     canvas.rotate(_tilt);
 
+    // Preferred path: the offline-rendered 3D sprite sheet.
+    final sheet = GameAssets.birdSheet(skin.id);
+    if (sheet != null) {
+      _drawSprite(canvas, sheet);
+      canvas.restore();
+      if (game.shieldActive) _drawShield(canvas);
+      return;
+    }
+
+    _drawProcedural(canvas);
+    canvas.restore();
+    if (game.shieldActive) _drawShield(canvas);
+  }
+
+  /// Blits the current flap frame from the baked sheet.
+  void _drawSprite(Canvas canvas, ui.Image sheet) {
+    const frames = GameConfig.birdSheetFrames;
+    final fw = sheet.width / frames;
+    final fh = sheet.height.toDouble();
+    final idx = ((_wingPhase / (2 * pi)) * frames).floor() % frames;
+    final src = Rect.fromLTWH(idx.abs() * fw, 0, fw, fh);
+
+    const w = r * GameConfig.birdSpriteScale;
+    final h = w * fh / fw;
+    canvas.drawImageRect(
+      sheet,
+      src,
+      Rect.fromCenter(center: Offset.zero, width: w, height: h),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+  }
+
+  /// Fallback: the original hand-drawn bird, used if the sheet failed to load.
+  void _drawProcedural(Canvas canvas) {
     final glow = Paint()
       ..color = Colors.black.withValues(alpha: 0.18)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
@@ -113,12 +148,6 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
 
     _drawWing(canvas);
     _drawFace(canvas);
-    canvas.restore();
-
-    // Shield ring is drawn upright (not tilted) so it reads clearly.
-    if (game.shieldActive) {
-      _drawShield(canvas);
-    }
   }
 
   void _drawWing(Canvas canvas) {

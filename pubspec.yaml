@@ -42,6 +42,11 @@ flutter:
   assets:
     - assets/audio/
     - assets/icon/
+    - assets/models/
+
+  shaders:
+    - shaders/sky.frag
+    - shaders/lens.frag
 
 # Configuration for flutter_launcher_icons (run: dart run flutter_launcher_icons).
 # Drop a 1024x1024 PNG at assets/icon/icon.png before running.

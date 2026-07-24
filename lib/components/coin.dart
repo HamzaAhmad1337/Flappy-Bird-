@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import '../services/assets.dart';
 
 /// A collectible coin. Scrolls with the world and, when the magnet power-up is
 /// active, is pulled toward the bird. Spins for a little shine.
@@ -49,7 +50,24 @@ class Coin extends PositionComponent with HasGameReference<FlappyGame> {
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
 
-    // Squash horizontally to fake a spin.
+    // Preferred path: the offline-rendered spinning gold coin.
+    final sheet = GameAssets.image('coin');
+    if (sheet != null) {
+      const frames = GameConfig.coinSheetFrames;
+      final fw = sheet.width / frames;
+      final fh = sheet.height.toDouble();
+      final idx = ((_spin / pi) * frames).floor() % frames;
+      canvas.drawImageRect(
+        sheet,
+        Rect.fromLTWH(idx.abs() * fw, 0, fw, fh),
+        Rect.fromCenter(center: Offset.zero, width: r * 2.5, height: r * 2.5 * fh / fw),
+        Paint()..filterQuality = FilterQuality.high,
+      );
+      canvas.restore();
+      return;
+    }
+
+    // Fallback: squash horizontally to fake a spin.
     final sx = (cos(_spin)).abs().clamp(0.25, 1.0);
     canvas.scale(sx, 1.0);
 
