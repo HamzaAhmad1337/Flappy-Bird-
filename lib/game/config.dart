@@ -24,7 +24,17 @@ class GameConfig {
   static const double pipeWidth = 80;
   static const double pipeGap = 194; // vertical opening
   static const double pipeSpeed = 178; // px / s base scroll speed
-  static const double pipeSpawnInterval = 1.45; // seconds
+
+  /// Pipes are spaced by *distance*, not time. With time-based spawning a
+  /// faster scroll pushed the pipes further apart, so getting better made the
+  /// course roomier — the speed ramp partly cancelled itself out. Fixed
+  /// spacing means more speed really does mean less reaction time.
+  static const double pipeSpacing = 258; // px between pipes
+
+  /// How far a gap centre may move between consecutive pipes, as a fraction of
+  /// the legal span. Keeps the course flowing instead of yanking the player
+  /// from top to bottom at random.
+  static const double maxGapCenterShift = 0.60;
   static const double pipeMinMargin = 78; // gap distance from top/bottom
   static const double pipeCapHeight = 34;
 

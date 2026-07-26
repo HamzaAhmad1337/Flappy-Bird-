@@ -10,9 +10,8 @@ class PauseMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.45),
-      alignment: Alignment.center,
+    return ModalScrim(
+      opacity: 0.45,
       child: GlassPanel(
         child: Column(
           mainAxisSize: MainAxisSize.min,

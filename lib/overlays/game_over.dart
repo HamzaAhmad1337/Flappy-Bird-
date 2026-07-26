@@ -60,13 +60,11 @@ class _GameOverMenuState extends State<GameOverMenu>
     final medal = _medal(score);
     final gap = best - score;
 
-    return GestureDetector(
+    return ModalScrim(
       // Tap anywhere to go again — the single biggest "one more run" lever.
-      onTap: _canTapRetry ? g.restart : null,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.5),
-        alignment: Alignment.center,
-        child: SingleChildScrollView(
+      onDismiss: _canTapRetry ? g.restart : null,
+      opacity: 0.5,
+      child: SingleChildScrollView(
           child: ScaleTransition(
             scale: CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
             child: Padding(
@@ -184,7 +182,6 @@ class _GameOverMenuState extends State<GameOverMenu>
             ),
           ),
         ),
-      ),
     );
   }
 }

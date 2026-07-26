@@ -48,9 +48,8 @@ class _ShopState extends State<Shop> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.55),
-      alignment: Alignment.center,
+    return ModalScrim(
+      onDismiss: _close,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440, maxHeight: 620),
         child: Padding(

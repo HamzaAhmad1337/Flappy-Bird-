@@ -54,6 +54,23 @@ editor, so the whole look is editable in code.
 - **Rendered pipes & ground** — weathered metal tubes with rust and moss, and a
   seamlessly tiling rocky embankment.
 
+**Design & performance**
+- **Distance-based pipe spacing.** Pipes used to be spaced by *time*, so a
+  faster scroll pushed them further apart and the speed ramp partly cancelled
+  itself out. Spacing them by distance means more speed genuinely means less
+  reaction time.
+- **Flowing courses.** Gap centres are a bounded random walk rather than
+  uniform noise, so the course never yanks you corner to corner — and the
+  first pipe opens near where the bird starts, so a new player's first life
+  isn't a coin flip.
+- **The difficulty curve is tested, not guessed.** `test/difficulty_test.dart`
+  flies an autopilot through thousands of generated pipes: it proves every
+  consecutive gap is physically reachable at every score, that a competent
+  policy scores ~20–70, and that mindless mashing dies almost immediately.
+- **Batched rendering.** The whole downpour is one `drawRawPoints` call
+  instead of 230 `drawLine`s, and every firefly/mote is one `drawAtlas` call
+  against a baked glow texture instead of a per-particle blur pass.
+
 **Progression & goals**
 - **Daily reward with a visible streak ladder** — escalating coins for coming
   back, capped so it never becomes a chore.

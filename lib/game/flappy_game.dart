@@ -24,6 +24,7 @@ import '../services/progression.dart';
 import '../services/sfx.dart';
 import '../services/storage.dart';
 import 'config.dart';
+import 'level.dart';
 import 'skins.dart';
 
 /// The heart of the game: owns state, spawns obstacles / collectibles, runs
@@ -58,7 +59,9 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   bool get reducedMotion => Storage.reducedMotion;
 
   double scrollSpeed = GameConfig.pipeSpeed;
-  double _spawnTimer = 0;
+  /// Distance travelled since the last pipe — pipes are spaced by distance.
+  double _sinceSpawn = 0;
+  late final LevelGenerator _level = LevelGenerator();
   double _idleTime = 0;
   double _worldTime = 0.1 * GameConfig.dayCycleSeconds; // start mid-morning
   final Random _rng = Random();
@@ -76,18 +79,10 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
   /// Set on death when this run beat the previous best.
   bool lastRunWasBest = false;
-  /// Previous best, captured before the new one overwrites it — powers the
-  /// "so close!" line on the game-over screen.
-  int previousBest = 0;
 
   /// Missions completed / achievements unlocked by the run that just ended.
   List<int> lastMissionsCompleted = const [];
   List<Achievement> lastUnlocked = const [];
-
-  /// Guards against an accidental instant restart from the same tap that
-  /// killed the run; counts down after the game-over screen appears.
-  double restartGuard = 0;
-  bool get canQuickRestart => restartGuard <= 0;
 
   // Power-up timers (real seconds remaining).
   double shieldRemaining = 0;
@@ -171,6 +166,15 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
   void refreshSkin() => skin = Skins.byId(Storage.selectedSkin);
 
+  /// Dismisses every popup. A run must never start underneath one — anything
+  /// opened from the menu (or scheduled asynchronously, like the daily reward)
+  /// would otherwise sit on top of live gameplay, blocking the flap surface.
+  void _closeModals() {
+    for (final id in const ['dailyReward', 'missions', 'shop', 'settings', 'pauseMenu']) {
+      overlays.remove(id);
+    }
+  }
+
   // ---- Input ---------------------------------------------------------------
 
   void onAction() {
@@ -227,9 +231,12 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     _timeScale = 1;
     _nearMissTimer = 0;
     scrollSpeed = GameConfig.pipeSpeed;
-    _spawnTimer = GameConfig.pipeSpawnInterval * 0.6;
+    _level.reset(startCenter: GameConfig.birdStartY);
+    // Give the player a beat before the first pipe arrives.
+    _sinceSpawn = GameConfig.pipeSpacing * 0.35;
     bird.reset();
     state = GameState.playing;
+    _closeModals();
     overlays.remove('mainMenu');
     overlays.remove('gameOver');
     overlays.add('hud');
@@ -275,8 +282,6 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     particles.burst(bird.position.x, bird.position.y, skin.body, count: 30);
 
     // Commit run rewards.
-    previousBest = best.value;
-    restartGuard = 0.7; // ignore taps for a beat so the killing tap doesn't retry
     if (runCoins > 0) {
       await Storage.addCoins(runCoins);
       wallet.value = Storage.coins;
@@ -315,7 +320,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     _nearMissTimer = 0.55;
     runNearMisses += 1;
     comboCount += 1;
-    _comboTimer = GameConfig.pipeSpawnInterval * 2.2;
+    _comboTimer = LevelGenerator.intervalFor(score.value) * 2.4;
     Sfx.swoosh();
     spawnText('CLOSE!', bird.position + Vector2(0, -40), PowerType.slowmo.color, size: 24);
   }
@@ -358,18 +363,17 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     }
     if (state != GameState.playing) return;
 
-    final bonus = min(score.value * GameConfig.speedPerPoint, GameConfig.maxSpeedBonus);
-    scrollSpeed = GameConfig.pipeSpeed + bonus;
+    scrollSpeed = LevelGenerator.speedFor(score.value);
 
     if (_comboTimer > 0) {
       _comboTimer -= scaled;
       if (_comboTimer <= 0) comboCount = 0;
     }
 
-    _spawnTimer -= scaled;
-    if (_spawnTimer <= 0) {
+    _sinceSpawn += scrollSpeed * scaled;
+    if (_sinceSpawn >= GameConfig.pipeSpacing) {
+      _sinceSpawn -= GameConfig.pipeSpacing;
       _spawnPipe();
-      _spawnTimer = GameConfig.pipeSpawnInterval;
     }
 
     _handleScoringAndCleanup();
@@ -384,7 +388,6 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     if (magnetRemaining > 0) magnetRemaining = max(0, magnetRemaining - dt);
     if (_invuln > 0) _invuln = max(0, _invuln - dt);
     if (_nearMissTimer > 0) _nearMissTimer = max(0, _nearMissTimer - dt);
-    if (restartGuard > 0) restartGuard = max(0, restartGuard - dt);
   }
 
   void _updateTimeScale(double dt) {
@@ -410,14 +413,9 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   // ---- Spawning ------------------------------------------------------------
 
   void _spawnPipe() {
-    final gap = max(
-      GameConfig.minGap,
-      GameConfig.pipeGap - score.value * GameConfig.gapShrinkPerPoint,
-    );
-    const groundY = GameConfig.height - GameConfig.groundHeight;
-    final minC = GameConfig.pipeMinMargin + gap / 2;
-    final maxC = groundY - GameConfig.pipeMinMargin - gap / 2;
-    final center = minC + _rng.nextDouble() * (maxC - minC);
+    final placement = _level.next(score.value);
+    final gap = placement.gap;
+    final center = placement.gapCenter;
 
     const x = GameConfig.width + 20;
     final pipe = PipePair(gapCenter: center, gap: gap)..position = Vector2(x, 0);
@@ -454,7 +452,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
         score.value += 1;
         comboCount += 1;
         if (comboCount > runBestCombo) runBestCombo = comboCount;
-        _comboTimer = GameConfig.pipeSpawnInterval * 2.2;
+        _comboTimer = LevelGenerator.intervalFor(score.value) * 2.4;
         Sfx.score();
         if (comboCount >= 3 && comboCount % 3 == 0) {
           runCoins += 1; // combo bounty

@@ -57,12 +57,10 @@ class _DailyRewardPopupState extends State<DailyRewardPopup>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _close,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.6),
-        alignment: Alignment.center,
-        child: ScaleTransition(
+    return ModalScrim(
+      onDismiss: _close,
+      opacity: 0.6,
+      child: ScaleTransition(
           scale: CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
           child: Padding(
             padding: const EdgeInsets.all(28),
@@ -107,7 +105,6 @@ class _DailyRewardPopupState extends State<DailyRewardPopup>
                   GameButton(label: 'Nice!', icon: Icons.check_rounded, onTap: _close),
                 ],
               ),
-            ),
           ),
         ),
       ),

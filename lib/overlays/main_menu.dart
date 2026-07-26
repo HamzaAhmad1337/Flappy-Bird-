@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../game/config.dart';
 import '../game/flappy_game.dart';
 import '../services/progression.dart';
 import '../services/sfx.dart';
@@ -31,6 +32,12 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Progression.ensureFreshMissions();
       if (!mounted) return;
+      // Rolling the missions over touches storage, and on a slow device that
+      // await can outlast the menu — a player who taps Play immediately would
+      // otherwise get the reward popping up on top of a run already in
+      // progress. Re-check where we are before showing anything.
+      if (widget.game.state != GameState.menu) return;
+      if (!widget.game.overlays.isActive('mainMenu')) return;
       if (Progression.dailyRewardAvailable &&
           !widget.game.overlays.isActive('dailyReward')) {
         widget.game.overlays.add('dailyReward');

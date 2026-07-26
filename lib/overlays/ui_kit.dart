@@ -31,6 +31,44 @@ class UiKit {
       );
 }
 
+/// Full-screen dimmed barrier sitting behind a modal panel.
+///
+/// Gives every popup the same backdrop and the same behaviour: the dimmed area
+/// swallows pointer events so nothing behind it reacts, and — where it makes
+/// sense — tapping it closes the panel. Previously each overlay hand-rolled a
+/// `Container(color: …)`; that does block taps (its `ColoredBox` hit-tests as
+/// opaque), but only the game-over screen offered tap-outside-to-dismiss, so
+/// the shop, settings and goals panels could only be closed via their little
+/// ✕. This makes the barrier explicit and the affordance consistent.
+///
+/// Pass [onDismiss] to let a tap on the dimmed area close the panel; leave it
+/// null — as the pause screen does — and the barrier still swallows the tap.
+class ModalScrim extends StatelessWidget {
+  const ModalScrim({
+    super.key,
+    required this.child,
+    this.onDismiss,
+    this.opacity = 0.55,
+  });
+
+  final Widget child;
+  final VoidCallback? onDismiss;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onDismiss,
+      child: Container(
+        color: Colors.black.withValues(alpha: opacity),
+        alignment: Alignment.center,
+        child: child,
+      ),
+    );
+  }
+}
+
 /// A little golden coin balance pill.
 class CoinPill extends StatelessWidget {
   const CoinPill({super.key, required this.count, this.big = false});

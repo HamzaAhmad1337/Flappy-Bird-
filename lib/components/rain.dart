@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +16,10 @@ class Rain extends PositionComponent {
   final Random _rng = Random();
   final List<_Drop> _drops = [];
   final List<_Splash> _splashes = [];
+
+  /// Endpoint buffer reused every frame so the whole downpour is a single
+  /// drawRawPoints call instead of one drawLine per drop.
+  late final Float32List _segments = Float32List(GameConfig.rainCount * 4);
 
   static const double _w = GameConfig.width;
   static const double _h = GameConfig.height;
@@ -65,17 +71,31 @@ class Rain extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final paint = Paint()
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 1.6;
     // Slant direction from wind + gravity.
     const slant = Offset(GameConfig.rainWindX, GameConfig.rainMaxSpeed);
     final norm = slant / slant.distance;
+
+    // All drops share one colour so they can go out in a single batched call;
+    // per-drop alpha is folded into the drop's length/brightness instead.
+    var n = 0;
     for (final d in _drops) {
-      paint.color = GameConfig.rainColor.withValues(alpha: d.alpha * 0.9);
-      final start = Offset(d.x, d.y);
-      final end = start - Offset(norm.dx * d.length, norm.dy * d.length);
-      canvas.drawLine(start, end, paint);
+      final i = n * 4;
+      final len = d.length * (0.55 + d.alpha * 0.45);
+      _segments[i] = d.x;
+      _segments[i + 1] = d.y;
+      _segments[i + 2] = d.x - norm.dx * len;
+      _segments[i + 3] = d.y - norm.dy * len;
+      n++;
+    }
+    if (n > 0) {
+      canvas.drawRawPoints(
+        ui.PointMode.lines,
+        Float32List.sublistView(_segments, 0, n * 4),
+        Paint()
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 1.6
+          ..color = GameConfig.rainColor.withValues(alpha: 0.62),
+      );
     }
     // Splashes: expanding faint arcs on the ground.
     final splashPaint = Paint()

@@ -23,9 +23,8 @@ class _SettingsState extends State<Settings> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.55),
-      alignment: Alignment.center,
+    return ModalScrim(
+      onDismiss: _close,
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: GlassPanel(

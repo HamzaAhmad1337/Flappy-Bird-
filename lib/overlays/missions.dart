@@ -51,9 +51,9 @@ class _MissionsPanelState extends State<MissionsPanel>
     final rank = Progression.rankFor(best);
     final next = Progression.nextRankAfter(best);
 
-    return Container(
-      color: Colors.black.withValues(alpha: 0.6),
-      alignment: Alignment.center,
+    return ModalScrim(
+      onDismiss: _close,
+      opacity: 0.6,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440, maxHeight: 640),
         child: Padding(
