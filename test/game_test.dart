@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flappy_rain/game/config.dart';
@@ -57,6 +59,42 @@ void main() {
     test('a flap out-climbs one clamped step of gravity', () {
       const gained = GameConfig.gravity * FlappyGame.maxTimeStep;
       expect(GameConfig.flapVelocity.abs(), greaterThan(gained));
+    });
+  });
+
+  group('time of day', () {
+    // The sprites are baked under one neutral studio light, so the world has
+    // to be tinted to track the sky — otherwise the ground and pipes stay
+    // daylit under a midnight storm.
+    test('the world tint darkens at night and is neutral at midday', () {
+      double luminance(Color c) =>
+          0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+
+      // dayness is a cosine of the phase: 0.25 is midday, 0.75 midnight.
+      double daynessAt(double phase) =>
+          (0.5 + 0.5 * cos((phase - 0.25) * 2 * pi)).clamp(0.0, 1.0);
+
+      expect(daynessAt(0.25), closeTo(1.0, 1e-9));
+      expect(daynessAt(0.75), closeTo(0.0, 1e-9));
+
+      Color tintFor(double dayness) {
+        final t = dayness * dayness * (3 - 2 * dayness);
+        return Color.lerp(const Color(0xFF6E7DA0), const Color(0xFFFFFFFF), t)!;
+      }
+
+      final midday = tintFor(daynessAt(0.25));
+      final midnight = tintFor(daynessAt(0.75));
+      expect(luminance(midday), closeTo(1.0, 1e-6),
+          reason: 'midday must leave the baked art untouched');
+      expect(luminance(midnight), lessThan(0.65),
+          reason: 'midnight must visibly dim the world');
+      // And it must be monotonic, so the transition never brightens backwards.
+      var previous = luminance(midnight);
+      for (var d = 0.0; d <= 1.0; d += 0.05) {
+        final l = luminance(tintFor(d));
+        expect(l, greaterThanOrEqualTo(previous - 1e-9));
+        previous = l;
+      }
     });
   });
 

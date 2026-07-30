@@ -62,6 +62,8 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
       ]);
       final paint = Paint()
         ..filterQuality = FilterQuality.medium
+        // Track the sky, or the ground stays daylit under a midnight storm.
+        ..colorFilter = ColorFilter.mode(game.worldTint, BlendMode.modulate)
         ..shader = ImageShader(
           tex, TileMode.repeated, TileMode.clamp, m,
           filterQuality: FilterQuality.medium,

@@ -225,7 +225,12 @@ class Progression {
   // ---- Daily reward --------------------------------------------------------
 
   /// Coins granted for the Nth consecutive day (capped so it stays sane).
-  static int dailyRewardFor(int streak) => 10 + min(streak - 1, 6) * 5;
+  ///
+  /// Day numbers are 1-based; clamping guards day 0, which the popup can ask
+  /// about for one frame before the claim resolves and would otherwise be
+  /// priced *below* day 1.
+  static int dailyRewardFor(int streak) =>
+      10 + min(max(streak, 1) - 1, 6) * 5;
 
   static bool get dailyRewardAvailable => Storage.lastDailyDay != todayIndex;
 

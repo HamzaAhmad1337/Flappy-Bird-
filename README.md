@@ -25,6 +25,12 @@ editor, so the whole look is editable in code.
   lit by the sun, atmospheric gradient, god rays, sun/moon bloom and stars.
 - **Cinematic lens pass** (`shaders/lens.frag`) — rain beading and running down
   the glass, vignette, chromatic fringing, film grain and lightning bloom.
+- **Baked parallax scenery** — a snow-capped mountain range and a city skyline
+  with lit windows, rasterised from a heightfield with real lighting, haze and
+  rock texture, tiling seamlessly at three parallax depths.
+- **Time-of-day world tint** — every sprite is baked under one neutral light,
+  so the world is tinted to track the sky; without it the ground and pipes
+  stayed daylit under a midnight storm.
 - **Wet-ground reflections** — the pipes and bird mirror into the rain-soaked
   ground, squashed, rippled and faded with depth.
 - **Ambient life** — fireflies that pulse at night, sunlit motes by day, and
@@ -70,6 +76,13 @@ editor, so the whole look is editable in code.
 - **Batched rendering.** The whole downpour is one `drawRawPoints` call
   instead of 230 `drawLine`s, and every firefly/mote is one `drawAtlas` call
   against a baked glow texture instead of a per-particle blur pass.
+- **Lazy skin textures.** Bird sheets decode on demand rather than loading all
+  eight at launch — about 6 MB of texture memory and a chunk of cold-start time
+  to show a single bird.
+- **Scoped HUD rebuilds.** Only the live readouts sit inside the per-frame
+  ticker; the flap surface and pause button no longer rebuild 60 times a second.
+- **Back gesture** pauses the run or steps out of a panel instead of quitting
+  the app mid-flight.
 
 **Progression & goals**
 - **Daily reward with a visible streak ladder** — escalating coins for coming

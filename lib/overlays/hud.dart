@@ -28,91 +28,100 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final game = widget.game;
+    // Only the parts that actually change every frame sit inside the ticker.
+    // Wrapping the whole HUD rebuilt the flap surface and the pause button 60
+    // times a second for nothing.
     return SafeArea(
-      child: AnimatedBuilder(
-        animation: _ticker,
-        builder: (context, _) {
-          return Stack(
+      child: Stack(
+        children: [
+          // Flap surface.
+          //
+          // Input lives here rather than on a GestureDetector wrapping the
+          // GameWidget: taps only reliably reach Flutter *overlay* widgets,
+          // and handling them in the state's own overlay keeps each screen
+          // owning its input. The pause corner is carved out of the layout
+          // so pressing it can never also flap.
+          Column(
             children: [
-              // Flap surface.
-              //
-              // Input lives here rather than on a GestureDetector wrapping the
-              // GameWidget: taps only reliably reach Flutter *overlay* widgets,
-              // and handling them in the state's own overlay keeps each screen
-              // owning its input. The pause corner is carved out of the layout
-              // so pressing it can never also flap.
-              Column(
-                children: [
-                  SizedBox(
-                    height: 76,
-                    child: Row(
+              SizedBox(
+                height: 76,
+                child: Row(
+                  children: [
+                    Expanded(child: _FlapArea(game: game)),
+                    const SizedBox(width: 76), // pause button corner
+                  ],
+                ),
+              ),
+              Expanded(child: _FlapArea(game: game)),
+            ],
+          ),
+          // Score — repaints only when the score actually changes.
+          Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 18),
+              child: ValueListenableBuilder<int>(
+                valueListenable: game.score,
+                builder: (_, score, __) => Column(
+                  children: [
+                    _PoppingScore(score: score),
+                    // The combo readout changes on the same beat as the score.
+                    if (game.comboCount >= 3) _ComboFlame(combo: game.comboCount),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Coins collected this run, and the live power-up timers. These are
+          // the only continuously-animating readouts, so the ticker drives just
+          // this corner.
+          AnimatedBuilder(
+            animation: _ticker,
+            builder: (context, _) => Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: CoinPill(count: game.runCoins),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: _FlapArea(game: game)),
-                        const SizedBox(width: 76), // pause button corner
+                        for (final p in game.activePowers) _PowerChip(p: p),
                       ],
                     ),
                   ),
-                  Expanded(child: _FlapArea(game: game)),
-                ],
-              ),
-              // Score.
-              Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 18),
-                  child: Column(
-                    children: [
-                      _PoppingScore(score: game.score.value),
-                      if (game.comboCount >= 3)
-                        _ComboFlame(combo: game.comboCount),
-                    ],
+                ),
+              ],
+            ),
+          ),
+          // Pause — static.
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: GestureDetector(
+                onTap: game.pause,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0x552C5B78),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                   ),
+                  child: const Icon(Icons.pause_rounded, color: Colors.white, size: 26),
                 ),
               ),
-              // Coins collected this run.
-              Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: CoinPill(count: game.runCoins),
-                ),
-              ),
-              // Pause.
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: GestureDetector(
-                    onTap: game.pause,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0x552C5B78),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                      ),
-                      child: const Icon(Icons.pause_rounded, color: Colors.white, size: 26),
-                    ),
-                  ),
-                ),
-              ),
-              // Active power-ups (left side, below the coin pill).
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final p in game.activePowers) _PowerChip(p: p),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }

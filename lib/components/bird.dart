@@ -106,12 +106,18 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
   }
 
   /// Blits the current flap frame from the baked sheet.
+  /// Which frame of the flap cycle the bird is on right now. Exposed so the
+  /// wet-ground reflection can mirror the same frame.
+  int get currentFrame {
+    const frames = GameConfig.birdSheetFrames;
+    return ((_wingPhase / (2 * pi)) * frames).floor().abs() % frames;
+  }
+
   void _drawSprite(Canvas canvas, ui.Image sheet) {
     const frames = GameConfig.birdSheetFrames;
     final fw = sheet.width / frames;
     final fh = sheet.height.toDouble();
-    final idx = ((_wingPhase / (2 * pi)) * frames).floor() % frames;
-    final src = Rect.fromLTWH(idx.abs() * fw, 0, fw, fh);
+    final src = Rect.fromLTWH(currentFrame * fw, 0, fw, fh);
 
     const w = r * GameConfig.birdSpriteScale;
     final h = w * fh / fw;

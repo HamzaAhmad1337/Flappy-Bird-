@@ -118,9 +118,13 @@ class Reflections extends PositionComponent with HasGameReference<FlappyGame> {
     const w = GameConfig.birdRadius * GameConfig.birdSpriteScale;
     final h = w * fh / fw;
 
+    // Mirror the frame the bird is actually on; a fixed frame made the
+    // reflection's wings sit still while the bird above them flapped.
+    final frame = b.currentFrame.clamp(0, frames - 1);
+
     canvas.drawImageRect(
       sheet,
-      Rect.fromLTWH(0, 0, fw, fh),
+      Rect.fromLTWH(frame * fw, 0, fw, fh),
       Rect.fromCenter(
         center: Offset(b.position.x, -height),
         width: w,

@@ -21,6 +21,16 @@ class Shop extends StatefulWidget {
 }
 
 class _ShopState extends State<Shop> {
+  @override
+  void initState() {
+    super.initState();
+    // Skin sheets are decoded lazily; the grid needs all of them, so warm them
+    // now and repaint as they arrive (cards show the painted bird until then).
+    GameAssets.ensureAllSkins(Skins.all.map((s) => s.id)).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   void _close() {
     Sfx.button();
     widget.game.overlays.remove('shop');

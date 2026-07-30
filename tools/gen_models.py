@@ -284,7 +284,7 @@ class PipeBodyModel(Scene):
 
     TILE = 2.0  # = cylinder diameter, and the vertical repeat period
 
-    materials = [dict(albedo=(0.20, 0.52, 0.24), rough=0.38, metal=0.35)]
+    materials = [dict(albedo=(0.17, 0.42, 0.22), rough=0.40, metal=0.32)]
     rim_color = (0.12, 0.16, 0.24)
 
     def sdf(self, p):
@@ -307,7 +307,7 @@ class PipeBodyModel(Scene):
         rust = np.clip((fbm(qq * 1.7, octaves=3) - 0.52) * 5.0, 0.0, 1.0)
         moss = np.clip((fbm(qq * 2.2 + 11.0, octaves=3) - 0.55) * 4.5, 0.0, 1.0)
 
-        base = np.array((0.20, 0.52, 0.24), dtype=np.float32)
+        base = np.array((0.17, 0.42, 0.22), dtype=np.float32)
         dark = np.array((0.10, 0.28, 0.13), dtype=np.float32)
         rust_c = np.array((0.42, 0.20, 0.08), dtype=np.float32)
         moss_c = np.array((0.13, 0.30, 0.10), dtype=np.float32)
@@ -325,7 +325,7 @@ class PipeBodyModel(Scene):
 class PipeCapModel(Scene):
     """The flared lip at the mouth of a pipe."""
 
-    materials = [dict(albedo=(0.22, 0.55, 0.26), rough=0.34, metal=0.45)]
+    materials = [dict(albedo=(0.19, 0.45, 0.24), rough=0.36, metal=0.42)]
     rim_color = (0.12, 0.16, 0.24)
 
     def sdf(self, p):
@@ -338,7 +338,7 @@ class PipeCapModel(Scene):
         n = self.bump(p, n, height, scale=0.06, eps=0.012)
         grunge = fbm(p * 4.5, octaves=4)
         rust = np.clip((fbm(p * 2.2 + 4.0, octaves=3) - 0.53) * 5.0, 0.0, 1.0)
-        base = np.array((0.24, 0.58, 0.28), dtype=np.float32)
+        base = np.array((0.20, 0.47, 0.25), dtype=np.float32)
         rust_c = np.array((0.44, 0.21, 0.09), dtype=np.float32)
         a = base[None, None, :] * (0.75 + 0.5 * grunge)[..., None]
         a = a * (1 - rust[..., None]) + rust_c[None, None, :] * rust[..., None]
@@ -360,7 +360,7 @@ def render_pipes():
                  ortho=PipeBodyModel.TILE, ss=3, lights=lights,
                  ambient=(0.13, 0.16, 0.23), shadows=False)
     # Square ortho window == tube diameter == vertical repeat period.
-    img = np.dstack([to_srgb8(buf['rgb'], saturation=1.30, contrast=1.06),
+    img = np.dstack([to_srgb8(buf['rgb'], saturation=1.02, contrast=1.04),
                      np.clip(buf['alpha'] * 255 + 0.5, 0, 255).astype(np.uint8)])
     Image.fromarray(img, 'RGBA').save(os.path.join(OUT, 'pipe_body.png'))
     print('   wrote assets/models/pipe_body.png')
@@ -369,7 +369,7 @@ def render_pipes():
     Wc, Hc = 160, 72
     buf = render(PipeCapModel(), Wc, Hc, cam_pos=(0, 0.0, 4.0), cam_target=(0, 0, 0),
                  ortho=1.15, ss=3, lights=lights, ambient=(0.13, 0.16, 0.23))
-    img = np.dstack([to_srgb8(buf['rgb'], saturation=1.30, contrast=1.06),
+    img = np.dstack([to_srgb8(buf['rgb'], saturation=1.02, contrast=1.04),
                      np.clip(buf['alpha'] * 255 + 0.5, 0, 255).astype(np.uint8)])
     Image.fromarray(img, 'RGBA').save(os.path.join(OUT, 'pipe_cap.png'))
     print('   wrote assets/models/pipe_cap.png')
@@ -412,10 +412,10 @@ class GroundModel(Scene):
         edge = -0.30 + (fbm(qq * 6.0, octaves=3) - 0.5) * 0.26
         grass = np.clip((y - edge) * 7.0, 0.0, 1.0)
 
-        dirt_c = np.array((0.26, 0.18, 0.11), dtype=np.float32)
-        dirt_hi = np.array((0.42, 0.31, 0.19), dtype=np.float32)
-        grass_c = np.array((0.20, 0.44, 0.13), dtype=np.float32)
-        grass_hi = np.array((0.42, 0.68, 0.22), dtype=np.float32)
+        dirt_c = np.array((0.20, 0.14, 0.09), dtype=np.float32)
+        dirt_hi = np.array((0.33, 0.24, 0.15), dtype=np.float32)
+        grass_c = np.array((0.15, 0.31, 0.12), dtype=np.float32)
+        grass_hi = np.array((0.29, 0.47, 0.19), dtype=np.float32)
 
         dirt = dirt_c[None, None, :] * (1 - grunge)[..., None] + dirt_hi[None, None, :] * grunge[..., None]
         gr = grass_c[None, None, :] * (1 - grunge)[..., None] + grass_hi[None, None, :] * grunge[..., None]
@@ -441,7 +441,7 @@ def render_ground():
         ],
         ambient=(0.13, 0.16, 0.22), shadows=False,
     )
-    img = np.dstack([to_srgb8(buf['rgb'], saturation=1.28, contrast=1.05),
+    img = np.dstack([to_srgb8(buf['rgb'], saturation=1.00, contrast=1.03),
                      np.clip(buf['alpha'] * 255 + 0.5, 0, 255).astype(np.uint8)])
     Image.fromarray(img, 'RGBA').save(os.path.join(OUT, 'ground.png'))
     print('   wrote assets/models/ground.png')
@@ -465,6 +465,162 @@ def main():
             continue
         TARGETS[name]()
     print('all done in %.1fs' % (time.time() - t0))
+
+
+
+
+# ===========================================================================
+# Parallax scenery — mountain range and city skyline
+# ===========================================================================
+#
+# These replace the flat vector silhouettes the background used to draw.
+#
+# They are rasterised directly from a heightfield rather than raymarched: they
+# are viewed head-on and orthographically, so every pixel's surface is a pure
+# function of x. Marching an SDF for that meant ~27 cone evaluations per step
+# across a million rays for a shape we can evaluate once per column. Lighting,
+# snow, haze and texture are still computed per pixel, so they read as rendered
+# rather than flat.
+#
+# Both tile horizontally: the generating functions are periodic in x, so the
+# left and right edges line up exactly.
+
+SCENERY_W = 6.0  # world units across one tile
+
+
+def _periodic_ridge(x, peaks, width=SCENERY_W):
+    """Height of the ridge at x, summing peaks wrapped over the tile."""
+    h = np.zeros_like(x)
+    for cx, ph, pw in peaks:
+        # Distance to the peak on a circle, so the profile wraps seamlessly.
+        d = np.abs(((x - cx + width / 2) % width) - width / 2)
+        # Smooth bump: cosine falloff inside the peak's radius.
+        t = np.clip(1.0 - d / pw, 0.0, 1.0)
+        h = np.maximum(h, ph * (t * t * (3 - 2 * t)))
+    return h
+
+
+def _shade_layer(mask, height, x, y, base_col, *, snow_line=None,
+                 light=(-0.55, 0.72), ambient=(0.16, 0.20, 0.28)):
+    """Light a heightfield silhouette. Returns (rgb, alpha) float buffers."""
+    H, W = mask.shape
+    # Surface normal from the slope of the ridge, with a little z curvature so
+    # faces turn away toward the silhouette edge.
+    dhdx = np.gradient(height, axis=1)
+    nx = -dhdx
+    ny = np.ones_like(nx)
+    nz = np.full_like(nx, 0.55)
+    inv = 1.0 / np.sqrt(nx * nx + ny * ny + nz * nz)
+    nx, ny, nz = nx * inv, ny * inv, nz * inv
+
+    lx, ly = light
+    ln = 1.0 / np.hypot(lx, ly)
+    ndl = np.clip(nx * lx * ln + ny * ly * ln, 0.0, 1.0)
+
+    # Depth into the body of the mountain -> ambient occlusion downward.
+    depth = np.clip((height - y) / np.maximum(height, 1e-3), 0.0, 1.0)
+    ao = 0.35 + 0.65 * (1.0 - depth) ** 0.6
+
+    rock = np.asarray(base_col, dtype=np.float32)
+    grain = fbm(np.stack([x * 3.0, y * 3.0, np.zeros_like(x)], axis=-1), octaves=4)
+    col = rock[None, None, :] * (0.72 + 0.55 * grain)[..., None]
+
+    if snow_line is not None:
+        # Snow settles on upward faces above the line, with a ragged edge.
+        edge = snow_line + (grain - 0.5) * 0.10
+        snowy = np.clip((y - edge) * 7.0, 0.0, 1.0) * np.clip(ny, 0.0, 1.0) ** 1.5
+        snow = np.asarray((0.93, 0.96, 1.00), dtype=np.float32)
+        col = col * (1 - snowy[..., None]) + snow[None, None, :] * snowy[..., None]
+
+    amb = np.asarray(ambient, dtype=np.float32)
+    lit = col * (0.35 + 0.9 * ndl)[..., None] * ao[..., None] + col * amb[None, None, :]
+
+    # Aerial perspective: wash the base out toward the sky colour.
+    haze = np.clip(1.0 - depth * 1.4, 0.0, 1.0)[..., None]
+    lit = lit * (1 - haze * 0.16) + amb[None, None, :] * haze * 0.28
+
+    return lit.astype(np.float32), mask.astype(np.float32)
+
+
+def render_scenery():
+    print('scenery: mountains + skyline…')
+    W, H = 512, 256
+    ss = 3
+    SW, SH = W * ss, H * ss
+
+    # World-space grid for one tile.
+    xs = np.linspace(0, SCENERY_W, SW, endpoint=False)
+    ys = np.linspace(1.0, 0.0, SH)  # top of image = high
+    x, y = np.meshgrid(xs, ys)
+
+    def down(buf):
+        if buf.ndim == 2:
+            return buf.reshape(H, ss, W, ss).mean(axis=(1, 3))
+        return buf.reshape(H, ss, W, ss, buf.shape[-1]).mean(axis=(1, 3))
+
+    # ---- mountains ----
+    # A few dominant summits with smaller shoulders between them, rather than a
+    # row of same-sized scallops.
+    rng = np.random.RandomState(5)
+    peaks = []
+    for i in range(7):
+        cx = (i + rng.uniform(-0.35, 0.35)) * (SCENERY_W / 7)
+        tall = rng.random() < 0.45
+        # Broad bases: narrow bumps read as stalagmites, not summits.
+        ph = rng.uniform(0.40, 0.60) if tall else rng.uniform(0.16, 0.32)
+        pw = rng.uniform(0.70, 1.15) if tall else rng.uniform(0.55, 0.90)
+        peaks.append((cx, ph, pw))
+
+    # Peaks rise out of a continuous massif rather than off the flat.
+    ring = np.stack([
+        np.cos(x * (2 * np.pi / SCENERY_W)) * 1.6,
+        np.sin(x * (2 * np.pi / SCENERY_W)) * 1.6,
+        np.zeros_like(x),
+    ], axis=-1)
+    massif = 0.20 + 0.16 * fbm(ring * 1.5, octaves=3)
+    height = massif + _periodic_ridge(x, peaks)
+    # Break up the ridge line so edges read as rock, not a drawn curve.
+    height = height * (0.92 + 0.16 * fbm(ring * 3.0, octaves=4))
+    mask = y < height
+    rgb, alpha = _shade_layer(mask, height, x, y, (0.20, 0.25, 0.36),
+                              snow_line=0.60)
+    img = np.dstack([to_srgb8(down(rgb), saturation=1.12, contrast=1.05),
+                     np.clip(down(alpha) * 255 + 0.5, 0, 255).astype(np.uint8)])
+    Image.fromarray(img, 'RGBA').save(os.path.join(OUT, 'mountains.png'))
+    print('   wrote assets/models/mountains.png')
+
+    # ---- skyline ----
+    rng = np.random.RandomState(17)
+    towers = []
+    cx = 0.0
+    while cx < SCENERY_W:
+        w = rng.uniform(0.10, 0.26)
+        h = rng.uniform(0.28, 0.85)
+        towers.append((cx + w, h, w))
+        cx += w * 2 + rng.uniform(0.01, 0.10)
+    sky_h = np.zeros_like(x)
+    for tcx, th, tw in towers:
+        d = np.abs(((x - tcx + SCENERY_W / 2) % SCENERY_W) - SCENERY_W / 2)
+        sky_h = np.maximum(sky_h, np.where(d < tw, th, 0.0))
+    mask = y < sky_h
+    rgb, alpha = _shade_layer(mask, sky_h, x, y, (0.10, 0.14, 0.21))
+
+    # Warm windows on a grid, only on the towers themselves.
+    gx = (np.sin(x * 150.0) > 0.45)
+    gy = (np.sin(y * 130.0) > 0.30)
+    cellrand = fbm(np.stack([np.floor(x * 24), np.floor(y * 21),
+                             np.zeros_like(x)], axis=-1) * 0.9, octaves=2)
+    lit = gx & gy & (cellrand > 0.47) & mask
+    warm = np.asarray((1.00, 0.80, 0.45), dtype=np.float32)
+    rgb = rgb + warm[None, None, :] * lit[..., None] * 0.55
+
+    img = np.dstack([to_srgb8(down(rgb), saturation=1.10, contrast=1.06),
+                     np.clip(down(alpha) * 255 + 0.5, 0, 255).astype(np.uint8)])
+    Image.fromarray(img, 'RGBA').save(os.path.join(OUT, 'skyline.png'))
+    print('   wrote assets/models/skyline.png')
+
+
+TARGETS['scenery'] = render_scenery
 
 
 if __name__ == '__main__':

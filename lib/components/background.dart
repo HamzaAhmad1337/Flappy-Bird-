@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../game/config.dart';
 import '../game/flappy_game.dart';
+import '../services/assets.dart';
 import 'sky_shader.dart';
 
 /// A layered, parallax-scrolling storm sky with a full day → night cycle:
@@ -104,10 +106,65 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
       _paintCelestial(canvas, dayness, nightAmount, phase);
       _paintClouds(canvas, dayness);
     }
-    _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360, nightAmount);
-    _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300, nightAmount);
-    _paintCity(canvas, nightAmount);
+
+    // Preferred path: the baked scenery layers. The same mountain texture is
+    // drawn twice at different scales, tints and parallax rates, which reads as
+    // two ranges receding into the haze.
+    final mountains = GameAssets.image('mountains');
+    final skyline = GameAssets.image('skyline');
+    if (mountains != null && skyline != null) {
+      _paintScenery(canvas, mountains, _farOffset * 0.6,
+          height: 210,
+          tint: Color.lerp(const Color(0xFF8FA6C4), const Color(0xFF2A3550),
+              nightAmount * 0.75)!);
+      _paintScenery(canvas, mountains, _nearOffset,
+          height: 150,
+          tint: Color.lerp(const Color(0xFF6E86A8), const Color(0xFF1C2438),
+              nightAmount * 0.8)!);
+      _paintScenery(canvas, skyline, _cityOffset,
+          height: 132,
+          tint: Color.lerp(const Color(0xFFAFC0D8), const Color(0xFF5A6C88),
+              nightAmount * 0.5)!);
+    } else {
+      _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360, nightAmount);
+      _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300, nightAmount);
+      _paintCity(canvas, nightAmount);
+    }
     _paintHaze(canvas);
+  }
+
+  /// Draws one baked parallax layer, repeating horizontally with its base
+  /// resting on the ground line.
+  void _paintScenery(
+    Canvas canvas,
+    ui.Image tex,
+    double offset, {
+    required double height,
+    required Color tint,
+  }) {
+    const groundY = _h - GameConfig.groundHeight;
+    final top = groundY - height;
+    // One repeat spans this many logical pixels.
+    final tile = height * (tex.width / tex.height);
+
+    final sx = tile / tex.width;
+    final sy = height / tex.height;
+    final m = Float64List.fromList([
+      sx, 0, 0, 0,
+      0, sy, 0, 0,
+      0, 0, 1, 0,
+      -(offset % tile), top, 0, 1,
+    ]);
+    canvas.drawRect(
+      Rect.fromLTWH(0, top, _w, height),
+      Paint()
+        ..filterQuality = FilterQuality.medium
+        ..colorFilter = ColorFilter.mode(tint, BlendMode.modulate)
+        ..shader = ImageShader(
+          tex, TileMode.repeated, TileMode.clamp, m,
+          filterQuality: FilterQuality.medium,
+        ),
+    );
   }
 
   void _paintSky(Canvas canvas, double phase) {

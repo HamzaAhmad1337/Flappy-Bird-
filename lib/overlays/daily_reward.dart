@@ -23,7 +23,11 @@ class _DailyRewardPopupState extends State<DailyRewardPopup>
         ..forward();
 
   int _coins = 0;
-  int _streak = 0;
+
+  /// Optimistic streak for the very first frame, before [_claim] resolves.
+  /// Claiming today extends the stored streak by one (or restarts at one), so
+  /// showing that up front avoids a flash of the wrong day number.
+  int _streak = Storage.streak + 1;
   bool _done = false;
 
   @override

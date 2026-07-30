@@ -145,8 +145,10 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
       0, 0, 1, 0,
       0, top, 0, 1,
     ]);
+    final tint = ColorFilter.mode(game.worldTint, BlendMode.modulate);
     final paint = Paint()
       ..filterQuality = FilterQuality.medium
+      ..colorFilter = tint
       ..shader = ImageShader(
         body, TileMode.clamp, TileMode.repeated, m,
         filterQuality: FilterQuality.medium,
@@ -164,7 +166,9 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
       cap,
       Rect.fromLTWH(0, 0, cap.width.toDouble(), cap.height.toDouble()),
       Rect.fromCenter(center: Offset.zero, width: cw, height: ch),
-      Paint()..filterQuality = FilterQuality.high,
+      Paint()
+        ..filterQuality = FilterQuality.high
+        ..colorFilter = tint,
     );
     canvas.restore();
   }

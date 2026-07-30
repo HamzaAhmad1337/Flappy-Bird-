@@ -109,6 +109,24 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
   double get stormIntensity => GameConfig.stormIntensity;
 
+  /// How lit the world is right now, 0 at midnight to 1 at midday.
+  double get dayness =>
+      (0.5 + 0.5 * cos((skyPhase - 0.25) * 2 * pi)).clamp(0.0, 1.0);
+
+  /// Multiplied into the world sprites so they track the sky.
+  ///
+  /// Every texture is baked under the same neutral studio light, so without
+  /// this the ground and pipes stayed daylit under a midnight sky — the most
+  /// jarring thing left in the scene once the day/night cycle went in.
+  Color get worldTint {
+    final d = dayness;
+    return Color.lerp(
+      const Color(0xFF6E7DA0), // night: dim and cool
+      const Color(0xFFFFFFFF), // midday: as baked
+      d * d * (3 - 2 * d), // smoothstep, so dusk lingers a little
+    )!;
+  }
+
   /// Physics never integrates more than this much time in a single step.
   ///
   /// Without a cap, one long frame — the hitch when overlays rebuild as a run
@@ -166,13 +184,39 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
   void refreshSkin() => skin = Skins.byId(Storage.selectedSkin);
 
+  /// Popups, outermost last — the order the back gesture unwinds them in.
+  static const List<String> _modalIds = [
+    'dailyReward',
+    'missions',
+    'shop',
+    'settings',
+    'pauseMenu',
+  ];
+
   /// Dismisses every popup. A run must never start underneath one — anything
   /// opened from the menu (or scheduled asynchronously, like the daily reward)
   /// would otherwise sit on top of live gameplay, blocking the flap surface.
   void _closeModals() {
-    for (final id in const ['dailyReward', 'missions', 'shop', 'settings', 'pauseMenu']) {
+    for (final id in _modalIds) {
       overlays.remove(id);
     }
+  }
+
+  /// Closes the frontmost open popup, if any. Returns whether one was closed,
+  /// so the back gesture can fall through to pausing when nothing is open.
+  bool closeTopModal() {
+    for (final id in _modalIds) {
+      if (overlays.isActive(id)) {
+        overlays.remove(id);
+        // Backing out of the pause panel should resume, not leave the game
+        // sitting frozen with no visible way back.
+        if (id == 'pauseMenu' && state == GameState.paused) {
+          state = GameState.playing;
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   // ---- Input ---------------------------------------------------------------
@@ -478,12 +522,22 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     });
   }
 
+  /// Squared distance between two points, without allocating a Vector2 for the
+  /// difference — this runs for every collectible on screen, every frame.
+  static double _dist2(double ax, double ay, double bx, double by) {
+    final dx = ax - bx;
+    final dy = ay - by;
+    return dx * dx + dy * dy;
+  }
+
   void _handleCollectibles() {
     final b = bird.bounds;
+
+    final coinReach = b.r + Coin.r;
+    final coinReach2 = coinReach * coinReach;
     for (final coin in _coins) {
       if (coin.collected) continue;
-      final d = (coin.position - bird.position).length;
-      if (d <= b.r + Coin.r) {
+      if (_dist2(coin.position.x, coin.position.y, b.x, b.y) <= coinReach2) {
         coin.collected = true;
         coin.removeFromParent();
         runCoins += 1;
@@ -493,10 +547,11 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     }
     _coins.removeWhere((c) => c.collected || c.isRemoving);
 
+    final powerReach = b.r + PowerUp.r;
+    final powerReach2 = powerReach * powerReach;
     for (final p in _powerups) {
       if (p.collected) continue;
-      final d = (p.position - bird.position).length;
-      if (d <= b.r + PowerUp.r) {
+      if (_dist2(p.position.x, p.position.y, b.x, b.y) <= powerReach2) {
         p.collected = true;
         p.removeFromParent();
         _activatePower(p.type);
