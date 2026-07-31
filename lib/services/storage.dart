@@ -41,7 +41,9 @@ class Storage {
       _prefs?.getStringList(_kUnlocked) ?? ['classic'];
 
   static Future<void> unlockSkin(String id) async {
-    final list = unlockedSkins;
+    // Copy before mutating: getStringList can hand back the plugin's own cached
+    // list, and appending to that corrupts the cache for every later read.
+    final list = List<String>.from(unlockedSkins);
     if (!list.contains(id)) {
       list.add(id);
       await _prefs?.setStringList(_kUnlocked, list);

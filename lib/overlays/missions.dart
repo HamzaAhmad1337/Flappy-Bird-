@@ -20,10 +20,18 @@ class MissionsPanel extends StatefulWidget {
 
 class _MissionsPanelState extends State<MissionsPanel>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 2, vsync: this);
+  late final TabController _tabs = TabController(length: 2, vsync: this)
+    // The body below is built from the selected index rather than being a
+    // TabBarView, so the panel has to repaint when the selection changes.
+    ..addListener(_onTabChanged);
+
+  void _onTabChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
+    _tabs.removeListener(_onTabChanged);
     _tabs.dispose();
     super.dispose();
   }
@@ -74,7 +82,8 @@ class _MissionsPanelState extends State<MissionsPanel>
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: _close,
-                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                      child: const Icon(Icons.close_rounded,
+                          color: Colors.white, size: 28),
                     ),
                   ],
                 ),
@@ -90,45 +99,73 @@ class _MissionsPanelState extends State<MissionsPanel>
                   tabs: const [Tab(text: 'TODAY'), Tab(text: 'AWARDS')],
                 ),
                 const SizedBox(height: 8),
+                // Deliberately not a TabBarView: that widget takes every pixel
+                // it is offered and forces both tabs to one height, so the
+                // three-item TODAY list floated above a third of a screen of
+                // empty glass. Building only the selected tab lets the panel
+                // hug whichever one is showing, and AnimatedSize makes the
+                // change between them read as a resize instead of a jump.
                 Flexible(
-                  child: TabBarView(
-                    controller: _tabs,
-                    children: [
-                      ListView(
-                        physics: const BouncingScrollPhysics(),
-                        children: [
-                          for (int i = 0; i < missions.length; i++)
-                            _MissionRow(
-                              mission: missions[i],
-                              progress: i < progress.length ? progress[i] : 0,
-                              claimed: i < claimed.length && claimed[i],
-                              onClaim: () => _claim(i),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: _tabs.index == 0
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (int i = 0; i < missions.length; i++)
+                                _MissionRow(
+                                  mission: missions[i],
+                                  progress:
+                                      i < progress.length ? progress[i] : 0,
+                                  claimed: i < claimed.length && claimed[i],
+                                  onClaim: () => _claim(i),
+                                ),
+                              const SizedBox(height: 6),
+                              Text('New goals every day',
+                                  style: UiKit.label(12,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.5))),
+                            ],
+                          )
+                        : ConstrainedBox(
+                            // The award wall is open-ended, so it scrolls — and
+                            // the bottom row fades rather than being sliced
+                            // flat, which is what says "there is more below".
+                            constraints: const BoxConstraints(maxHeight: 320),
+                            child: ShaderMask(
+                              shaderCallback: (r) => const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white,
+                                  Colors.white,
+                                  Colors.transparent
+                                ],
+                                stops: [0, 0.86, 1],
+                              ).createShader(r),
+                              blendMode: BlendMode.dstIn,
+                              child: GridView.builder(
+                                padding: EdgeInsets.zero,
+                                physics: const BouncingScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 10,
+                                  crossAxisSpacing: 10,
+                                  childAspectRatio: 0.86,
+                                ),
+                                itemCount: Progression.achievements.length,
+                                itemBuilder: (_, i) {
+                                  final a = Progression.achievements[i];
+                                  return _AwardTile(
+                                      achievement: a,
+                                      unlocked: Storage.hasAchievement(a.id));
+                                },
+                              ),
                             ),
-                          const SizedBox(height: 6),
-                          Center(
-                            child: Text('New goals every day',
-                                style: UiKit.label(12,
-                                    color: Colors.white.withValues(alpha: 0.5))),
                           ),
-                        ],
-                      ),
-                      GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 0.86,
-                        ),
-                        itemCount: Progression.achievements.length,
-                        itemBuilder: (_, i) {
-                          final a = Progression.achievements[i];
-                          return _AwardTile(
-                              achievement: a, unlocked: Storage.hasAchievement(a.id));
-                        },
-                      ),
-                    ],
                   ),
                 ),
               ],
@@ -149,7 +186,8 @@ class _RankBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final span = next == null ? 1 : (next!.minScore - rank.minScore);
-    final done = next == null ? 1.0 : ((best - rank.minScore) / span).clamp(0.0, 1.0);
+    final done =
+        next == null ? 1.0 : ((best - rank.minScore) / span).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -163,11 +201,15 @@ class _RankBar extends StatelessWidget {
             children: [
               Icon(Icons.shield_rounded, color: rank.color, size: 20),
               const SizedBox(width: 8),
-              Text(rank.name.toUpperCase(), style: UiKit.label(15, color: rank.color)),
+              Text(rank.name.toUpperCase(),
+                  style: UiKit.label(15, color: rank.color)),
               const Spacer(),
               Text(
-                next == null ? 'MAX RANK' : 'Next: ${next!.name} @ ${next!.minScore}',
-                style: UiKit.label(12, color: Colors.white.withValues(alpha: 0.65)),
+                next == null
+                    ? 'MAX RANK'
+                    : 'Next: ${next!.name} @ ${next!.minScore}',
+                style: UiKit.label(12,
+                    color: Colors.white.withValues(alpha: 0.65)),
               ),
             ],
           ),
@@ -228,12 +270,14 @@ class _MissionRow extends StatelessWidget {
                         color: claimed ? Colors.white38 : Colors.white)),
               ),
               if (claimed)
-                const Icon(Icons.check_circle_rounded, color: Colors.white38, size: 22)
+                const Icon(Icons.check_circle_rounded,
+                    color: Colors.white38, size: 22)
               else if (complete)
                 GestureDetector(
                   onTap: onClaim,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
                       color: UiKit.accent,
                       borderRadius: BorderRadius.circular(20),
@@ -289,7 +333,8 @@ class _AwardTile extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: UiKit.label(11, color: unlocked ? Colors.white : Colors.white38),
+            style: UiKit.label(11,
+                color: unlocked ? Colors.white : Colors.white38),
           ),
           const SizedBox(height: 2),
           Text(

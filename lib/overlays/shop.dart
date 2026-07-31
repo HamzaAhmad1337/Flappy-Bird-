@@ -80,32 +80,46 @@ class _ShopState extends State<Shop> {
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: _close,
-                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                      child: const Icon(Icons.close_rounded,
+                          color: Colors.white, size: 28),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Flexible(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.82,
+                  // The grid is taller than the panel, and a row sliced flat at
+                  // the bottom edge reads as a broken layout rather than "there
+                  // is more below". Fading the last few pixels says scroll.
+                  child: ShaderMask(
+                    shaderCallback: (r) => const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.white, Colors.white, Colors.transparent],
+                      stops: [0, 0.88, 1],
+                    ).createShader(r),
+                    blendMode: BlendMode.dstIn,
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.82,
+                      ),
+                      itemCount: Skins.all.length,
+                      itemBuilder: (_, i) {
+                        final skin = Skins.all[i];
+                        return _SkinCard(
+                          skin: skin,
+                          unlocked: Storage.isUnlocked(skin.id),
+                          selected: Storage.selectedSkin == skin.id,
+                          affordable: Storage.coins >= skin.price,
+                          onTap: () => _onSkin(skin),
+                        );
+                      },
                     ),
-                    itemCount: Skins.all.length,
-                    itemBuilder: (_, i) {
-                      final skin = Skins.all[i];
-                      return _SkinCard(
-                        skin: skin,
-                        unlocked: Storage.isUnlocked(skin.id),
-                        selected: Storage.selectedSkin == skin.id,
-                        affordable: Storage.coins >= skin.price,
-                        onTap: () => _onSkin(skin),
-                      );
-                    },
                   ),
                 ),
               ],
@@ -134,9 +148,8 @@ class _SkinCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color border = selected
-        ? UiKit.accent
-        : (unlocked ? Colors.white24 : Colors.white10);
+    final Color border =
+        selected ? UiKit.accent : (unlocked ? Colors.white24 : Colors.white10);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -155,8 +168,10 @@ class _SkinCard extends StatelessWidget {
                   _BirdPreview(skin: skin),
                   if (!unlocked)
                     const Positioned(
-                      right: 0, top: 0,
-                      child: Icon(Icons.lock_rounded, color: Colors.white70, size: 18),
+                      right: 0,
+                      top: 0,
+                      child: Icon(Icons.lock_rounded,
+                          color: Colors.white70, size: 18),
                     ),
                 ],
               ),
@@ -178,22 +193,26 @@ class _SkinCard extends StatelessWidget {
       return _pill('SELECT', const Color(0xFF2C5B78), Colors.white);
     }
     // Locked: show price.
-    final color = affordable ? const Color(0xFF2E7D32) : const Color(0x552C5B78);
+    final color =
+        affordable ? const Color(0xFF2E7D32) : const Color(0x552C5B78);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 16, height: 16,
+          width: 16,
+          height: 16,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            gradient: RadialGradient(colors: [Color(0xFFFFF3B0), Color(0xFFFFC93C)]),
+            gradient:
+                RadialGradient(colors: [Color(0xFFFFF3B0), Color(0xFFFFC93C)]),
           ),
         ),
         const SizedBox(width: 5),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(
+              color: color, borderRadius: BorderRadius.circular(20)),
           child: Text('${skin.price}', style: UiKit.label(14)),
         ),
       ],
@@ -203,7 +222,8 @@ class _SkinCard extends StatelessWidget {
   Widget _pill(String text, Color bg, Color fg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
       child: Text(text, style: UiKit.label(13, color: fg)),
     );
   }
@@ -219,7 +239,8 @@ class _BirdPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final sheet = GameAssets.birdSheet(skin.id);
     if (sheet == null) {
-      return CustomPaint(size: const Size(72, 60), painter: _BirdPreviewPainter(skin));
+      return CustomPaint(
+          size: const Size(72, 60), painter: _BirdPreviewPainter(skin));
     }
     // Show a mid-glide frame from the sheet.
     return SizedBox(
@@ -270,26 +291,30 @@ class _BirdPreviewPainter extends CustomPainter {
 
     if (skin.glow) {
       canvas.drawCircle(
-        Offset.zero, r * 1.6,
+        Offset.zero,
+        r * 1.6,
         Paint()
           ..color = skin.trail.withValues(alpha: 0.3)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
       );
     }
 
-    final bodyRect = Rect.fromCenter(center: Offset.zero, width: r * 2.3, height: r * 2.0);
+    final bodyRect =
+        Rect.fromCenter(center: Offset.zero, width: r * 2.3, height: r * 2.0);
     canvas.drawOval(
       bodyRect,
       Paint()
-        ..shader = ui.Gradient.linear(
-          bodyRect.topCenter, bodyRect.bottomCenter, [skin.hi, skin.body, skin.lo], const [0, 0.55, 1.0]),
+        ..shader = ui.Gradient.linear(bodyRect.topCenter, bodyRect.bottomCenter,
+            [skin.hi, skin.body, skin.lo], const [0, 0.55, 1.0]),
     );
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(-1, 5), width: r * 1.5, height: r * 1.1),
+      Rect.fromCenter(
+          center: const Offset(-1, 5), width: r * 1.5, height: r * 1.1),
       Paint()..color = skin.belly.withValues(alpha: 0.7),
     );
     // Wing.
-    final wingRect = Rect.fromCenter(center: const Offset(-5, 2), width: r * 1.5, height: r * 1.0);
+    final wingRect = Rect.fromCenter(
+        center: const Offset(-5, 2), width: r * 1.5, height: r * 1.0);
     canvas.drawOval(wingRect, Paint()..color = skin.wing);
     // Beak.
     final beak = Path()
@@ -300,10 +325,13 @@ class _BirdPreviewPainter extends CustomPainter {
     canvas.drawPath(beak, Paint()..color = skin.beak);
     // Eye.
     canvas.drawCircle(const Offset(7, -6), 6, Paint()..color = Colors.white);
-    canvas.drawCircle(const Offset(8.4, -6), 2.7, Paint()..color = const Color(0xFF20303A));
-    canvas.drawCircle(const Offset(9.2, -7), 1.0, Paint()..color = Colors.white);
+    canvas.drawCircle(
+        const Offset(8.4, -6), 2.7, Paint()..color = const Color(0xFF20303A));
+    canvas.drawCircle(
+        const Offset(9.2, -7), 1.0, Paint()..color = Colors.white);
   }
 
   @override
-  bool shouldRepaint(covariant _BirdPreviewPainter old) => old.skin.id != skin.id;
+  bool shouldRepaint(covariant _BirdPreviewPainter old) =>
+      old.skin.id != skin.id;
 }
