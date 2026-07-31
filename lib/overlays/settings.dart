@@ -46,10 +46,23 @@ class _SettingsState extends State<Settings> {
                 label: 'Sound',
                 icon: Icons.volume_up_rounded,
                 value: Storage.soundOn,
-                onChanged: (v) {
-                  Storage.setSoundOn(v);
-                  setState(() {});
+                onChanged: (v) async {
+                  await Storage.setSoundOn(v);
+                  // Rain is part of "sound", so start/stop it with the toggle.
+                  await Sfx.settingsChanged();
+                  if (mounted) setState(() {});
                   if (v) Sfx.button();
+                },
+              ),
+              _Toggle(
+                label: 'Music',
+                icon: Icons.music_note_rounded,
+                value: Storage.musicOn,
+                onChanged: (v) async {
+                  await Storage.setMusicOn(v);
+                  await Sfx.settingsChanged();
+                  if (mounted) setState(() {});
+                  Sfx.button();
                 },
               ),
               _Toggle(

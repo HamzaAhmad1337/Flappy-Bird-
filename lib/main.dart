@@ -75,10 +75,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Auto-pause when the app is backgrounded so the player doesn't lose a run.
-    if (state != AppLifecycleState.resumed &&
-        _game.state == GameState.playing) {
+    final backgrounded = state != AppLifecycleState.resumed;
+    if (backgrounded && _game.state == GameState.playing) {
       _game.pause();
     }
+    // Don't keep raining into someone's headphones after they switch away.
+    Sfx.setPaused(backgrounded);
   }
 
   /// Android's back gesture. Backing out of a run should pause it or step back
@@ -91,7 +93,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _game.pause();
       return;
     }
-    if (_game.state == GameState.gameOver) {
+    if (_game.state == GameState.gameOver || _game.state == GameState.ready) {
+      // Backing out before the first flap costs nothing, so go straight to the
+      // menu rather than pausing an un-started run — or, worse, quitting.
       _game.goToMenu();
       return;
     }

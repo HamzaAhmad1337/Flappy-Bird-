@@ -46,7 +46,15 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   final ValueNotifier<int> best = ValueNotifier<int>(0);
   final ValueNotifier<int> wallet = ValueNotifier<int>(0);
 
-  GameState state = GameState.menu;
+  /// The current phase, exposed as a listenable so overlays can react to a
+  /// transition instead of polling. The HUD's "get ready" prompt is driven by
+  /// this: the HUD itself doesn't rebuild every frame (deliberately), so a
+  /// plain field would have left the prompt frozen on screen after the first
+  /// flap.
+  final ValueNotifier<GameState> phase = ValueNotifier<GameState>(GameState.menu);
+
+  GameState get state => phase.value;
+  set state(GameState v) => phase.value = v;
 
   late final Bird bird;
   late final Background background;
@@ -224,12 +232,14 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   void onAction() {
     switch (state) {
       case GameState.menu:
+        // Same as tapping Play: leave the bird hovering and let the next press
+        // be the one that commits. Flapping straight through would make the
+        // keyboard path skip the ready beat the touch path gets.
         startGame();
-        bird.flap();
         break;
+      case GameState.ready:
       case GameState.playing:
-        bird.flap();
-        Sfx.flap();
+        flapInput();
         break;
       case GameState.paused:
       case GameState.gameOver:
@@ -240,6 +250,13 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   /// Flap, driven by the HUD's press surface. Safe to call repeatedly — a flap
   /// sets the vertical velocity rather than accumulating it.
   void flapInput() {
+    if (state == GameState.ready) {
+      // First flap commits: physics and spawning start from here.
+      state = GameState.playing;
+      bird.flap();
+      Sfx.flap();
+      return;
+    }
     if (state != GameState.playing) return;
     bird.flap();
     Sfx.flap();
@@ -259,6 +276,9 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   // ---- State transitions ---------------------------------------------------
 
   void startGame() {
+    // Browsers (and iOS in some states) refuse to start audio until the user
+    // has interacted, so the looping beds begin here rather than at launch.
+    Sfx.startBeds();
     _clearField();
     refreshSkin();
     score.value = 0;
@@ -279,7 +299,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     // Give the player a beat before the first pipe arrives.
     _sinceSpawn = GameConfig.pipeSpacing * 0.35;
     bird.reset();
-    state = GameState.playing;
+    state = GameState.ready;
     _closeModals();
     overlays.remove('mainMenu');
     overlays.remove('gameOver');
@@ -400,7 +420,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     final scaled = dt * _timeScale;
     super.update(scaled);
 
-    if (state == GameState.menu) {
+    if (state == GameState.menu || state == GameState.ready) {
       _idleTime += dt;
       bird.idleBob(dt, _idleTime);
       return;

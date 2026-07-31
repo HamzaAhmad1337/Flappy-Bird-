@@ -21,7 +21,13 @@ class Sfx {
     'shield.wav',
     'button.wav',
     'swoosh.wav',
+    'ambience_rain.wav',
+    'music_loop.wav',
   ];
+
+  /// Continuous beds: rainfall, and the pad that sits under it.
+  static AudioPlayer? _ambience;
+  static AudioPlayer? _music;
 
   /// Preload clips into the audio cache. Safe to call once at startup.
   static Future<void> init() async {
@@ -31,6 +37,59 @@ class Sfx {
     } catch (_) {
       _ready = false;
     }
+  }
+
+  // ---- Looping beds --------------------------------------------------------
+
+  /// Starts (or restarts) the rain and music loops according to the player's
+  /// settings. Called after the first interaction, because browsers — and iOS
+  /// in some states — refuse to start audio before the user has touched
+  /// something.
+  static Future<void> startBeds() async {
+    await _syncAmbience();
+    await _syncMusic();
+  }
+
+  static Future<void> _syncAmbience() async {
+    try {
+      if (Storage.soundOn && _ambience == null) {
+        _ambience = await FlameAudio.loop('ambience_rain.wav', volume: 0.34);
+      } else if (!Storage.soundOn && _ambience != null) {
+        await _ambience?.stop();
+        _ambience = null;
+      }
+    } catch (_) {
+      _ambience = null;
+    }
+  }
+
+  static Future<void> _syncMusic() async {
+    try {
+      if (Storage.musicOn && _music == null) {
+        _music = await FlameAudio.loop('music_loop.wav', volume: 0.22);
+      } else if (!Storage.musicOn && _music != null) {
+        await _music?.stop();
+        _music = null;
+      }
+    } catch (_) {
+      _music = null;
+    }
+  }
+
+  /// Re-reads the settings and starts/stops the beds to match.
+  static Future<void> settingsChanged() => startBeds();
+
+  /// Suspends the beds while the app is backgrounded, and brings them back.
+  static Future<void> setPaused(bool paused) async {
+    try {
+      if (paused) {
+        await _ambience?.pause();
+        await _music?.pause();
+      } else {
+        await _ambience?.resume();
+        await _music?.resume();
+      }
+    } catch (_) {/* ignore */}
   }
 
   static void _play(String clip, {double volume = 1.0}) {

@@ -71,10 +71,9 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     return GestureDetector(
       // Tap anywhere (outside a button) to fly.
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        widget.game.startGame();
-        widget.game.bird.flap();
-      },
+      // Starting leaves the bird hovering in the ready state; the player's
+      // next tap is what commits them to the run.
+      onTap: widget.game.startGame,
       child: SafeArea(
         child: Stack(
           children: [
@@ -140,10 +139,7 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                     GameButton(
                       label: 'PLAY',
                       icon: Icons.play_arrow_rounded,
-                      onTap: () {
-                        widget.game.startGame();
-                        widget.game.bird.flap();
-                      },
+                      onTap: widget.game.startGame,
                     ),
                     const SizedBox(height: 14),
                     Row(

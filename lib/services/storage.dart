@@ -14,6 +14,7 @@ class Storage {
   static const _kUnlocked = 'flappy_rain_unlocked_v1';
   static const _kSelected = 'flappy_rain_selected_skin_v1';
   static const _kSound = 'flappy_rain_sound_v1';
+  static const _kMusic = 'flappy_rain_music_v1';
   static const _kHaptics = 'flappy_rain_haptics_v1';
   static const _kMotion = 'flappy_rain_reduced_motion_v1';
   static const _kGames = 'flappy_rain_games_played_v1';
@@ -129,6 +130,9 @@ class Storage {
   // ---- Settings ------------------------------------------------------------
   static bool get soundOn => _prefs?.getBool(_kSound) ?? true;
   static Future<void> setSoundOn(bool v) async => _prefs?.setBool(_kSound, v);
+
+  static bool get musicOn => _prefs?.getBool(_kMusic) ?? true;
+  static Future<void> setMusicOn(bool v) async => _prefs?.setBool(_kMusic, v);
 
   static bool get hapticsOn => _prefs?.getBool(_kHaptics) ?? true;
   static Future<void> setHapticsOn(bool v) async => _prefs?.setBool(_kHaptics, v);

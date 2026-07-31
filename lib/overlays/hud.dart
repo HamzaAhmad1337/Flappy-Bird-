@@ -102,6 +102,15 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
               ],
             ),
           ),
+          // Ready prompt: shown until the first flap commits the run.
+          ValueListenableBuilder<GameState>(
+            valueListenable: game.phase,
+            builder: (_, phase, __) => phase == GameState.ready
+                // Sits below centre: the bird hovers at the vertical middle,
+                // and dead-centre text ran straight through it.
+                ? const Align(alignment: Alignment(0, 0.34), child: _ReadyPrompt())
+                : const SizedBox.shrink(),
+          ),
           // Pause — static.
           Align(
             alignment: Alignment.topRight,
@@ -121,6 +130,45 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "get ready" prompt, pulsing until the player commits to the run.
+class _ReadyPrompt extends StatefulWidget {
+  const _ReadyPrompt();
+
+  @override
+  State<_ReadyPrompt> createState() => _ReadyPromptState();
+}
+
+class _ReadyPromptState extends State<_ReadyPrompt>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 900))
+    ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween(begin: 0.45, end: 1.0).animate(_c),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('GET READY', style: UiKit.title(30)),
+          const SizedBox(height: 10),
+          const Icon(Icons.touch_app_rounded, color: Colors.white, size: 38),
+          const SizedBox(height: 4),
+          Text('tap to fly',
+              style: UiKit.label(15, color: Colors.white.withValues(alpha: 0.85))),
         ],
       ),
     );

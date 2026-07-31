@@ -107,7 +107,11 @@ class GameConfig {
   static const Color birdWing = Color(0xFFF2A93B);
 }
 
-enum GameState { menu, playing, paused, gameOver }
+/// [ready] is the beat after starting a run where the bird hovers and nothing
+/// spawns, until the player's first flap. Dropping straight into physics meant
+/// a mistimed Play tap could cost a life before the player had even looked at
+/// the screen.
+enum GameState { menu, ready, playing, paused, gameOver }
 
 enum PowerType { shield, slowmo, magnet }
 
