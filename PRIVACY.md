@@ -28,9 +28,22 @@ cloud save.
 
 ## Permissions
 
-The Android build declares no runtime permissions. The iOS build requests
-none. The only device features used are the screen, the speaker, and the
-haptic engine — all of which you can silence in the in-game Settings panel.
+The Android build requests no user-facing permissions at all — verified by
+reading the manifest out of the shipped APK, not just the source. In
+particular it does **not** hold `android.permission.INTERNET`, which means the
+game is incapable of making a network request even if it wanted to.
+
+Two entries do appear in the manifest, and neither grants the app anything:
+
+- `…DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` — a signature-level permission
+  the app defines *for itself*, added automatically by AndroidX so its internal
+  broadcasts cannot be received by other apps. It is never shown to you.
+- `android.permission.DUMP` — listed as a *restriction* on AndroidX's profile
+  installer receiver, limiting who may invoke it to the system shell. The app
+  does not request or hold this permission.
+
+The iOS build requests none. The only device features used are the screen, the
+speaker, and the haptic engine — all of which you can silence in Settings.
 
 ## Children
 
