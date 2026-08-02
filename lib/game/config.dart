@@ -71,6 +71,16 @@ class GameConfig {
   static const double magnetDuration = 9;
   static const double slowmoFactor = 0.45; // time scale while slow-mo active
 
+  // ---- Second chance -------------------------------------------------------
+  /// Coins to carry a run past one death. Priced above a typical run's take so
+  /// it costs something real, and below the cheapest skin so it never feels
+  /// like the shop is being held hostage.
+  static const int continueCost = 25;
+
+  /// Invulnerable seconds after a revive, so the player gets their bearings
+  /// back before the course can kill them again.
+  static const double continueGrace = 2.2;
+
   // ---- Juice ---------------------------------------------------------------
   static const double nearMissDist = 26; // proximity for a "close call"
   static const double nearMissSlowmo = 0.35; // brief bullet-time on near miss

@@ -126,8 +126,10 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
           tint: Color.lerp(const Color(0xFFAFC0D8), const Color(0xFF5A6C88),
               nightAmount * 0.5)!);
     } else {
-      _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360, nightAmount);
-      _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300, nightAmount);
+      _paintRange(canvas, _farRange, _farOffset, GameConfig.mountainFar, 360,
+          nightAmount);
+      _paintRange(canvas, _nearRange, _nearOffset, GameConfig.mountainNear, 300,
+          nightAmount);
       _paintCity(canvas, nightAmount);
     }
     _paintHaze(canvas);
@@ -150,10 +152,22 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     final sx = tile / tex.width;
     final sy = height / tex.height;
     final m = Float64List.fromList([
-      sx, 0, 0, 0,
-      0, sy, 0, 0,
-      0, 0, 1, 0,
-      -(offset % tile), top, 0, 1,
+      sx,
+      0,
+      0,
+      0,
+      0,
+      sy,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      -(offset % tile),
+      top,
+      0,
+      1,
     ]);
     canvas.drawRect(
       Rect.fromLTWH(0, top, _w, height),
@@ -161,7 +175,10 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
         ..filterQuality = FilterQuality.medium
         ..colorFilter = ColorFilter.mode(tint, BlendMode.modulate)
         ..shader = ImageShader(
-          tex, TileMode.repeated, TileMode.clamp, m,
+          tex,
+          TileMode.repeated,
+          TileMode.clamp,
+          m,
           filterQuality: FilterQuality.medium,
         ),
     );
@@ -189,35 +206,42 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     }
   }
 
-  void _paintCelestial(Canvas canvas, double dayness, double nightAmount, double phase) {
+  void _paintCelestial(
+      Canvas canvas, double dayness, double nightAmount, double phase) {
     // Sun and moon share an arc; each fades with time of day.
     const arcX = _w * 0.72;
     final arcY = 120 + sin(phase * 2 * pi) * 30;
 
     if (dayness > 0.02) {
       canvas.drawCircle(
-        Offset(arcX, arcY), 60,
+        Offset(arcX, arcY),
+        60,
         Paint()
           ..color = const Color(0xFFFFE9A8).withValues(alpha: dayness * 0.35)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30),
       );
       canvas.drawCircle(
-        Offset(arcX, arcY), 30,
+        Offset(arcX, arcY),
+        30,
         Paint()..color = const Color(0xFFFFF2C4).withValues(alpha: dayness),
       );
     }
     if (nightAmount > 0.02) {
       canvas.drawCircle(
-        Offset(arcX, arcY), 50,
+        Offset(arcX, arcY),
+        50,
         Paint()
-          ..color = const Color(0xFFDDE8FF).withValues(alpha: nightAmount * 0.25)
+          ..color =
+              const Color(0xFFDDE8FF).withValues(alpha: nightAmount * 0.25)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22),
       );
-      final moon = Paint()..color = const Color(0xFFEAF0FF).withValues(alpha: nightAmount);
+      final moon = Paint()
+        ..color = const Color(0xFFEAF0FF).withValues(alpha: nightAmount);
       canvas.drawCircle(Offset(arcX, arcY), 26, moon);
       // Crater shadow to give the moon a crescent-ish read.
       canvas.drawCircle(
-        Offset(arcX + 12, arcY - 6), 24,
+        Offset(arcX + 12, arcY - 6),
+        24,
         Paint()..color = _skyFor(phase)[0].withValues(alpha: nightAmount),
       );
     }
@@ -243,7 +267,8 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     }
   }
 
-  Path _buildRange({required int seed, required double amplitude, required double step}) {
+  Path _buildRange(
+      {required int seed, required double amplitude, required double step}) {
     final rng = Random(seed);
     final path = Path()..moveTo(0, _h);
     double x = 0;
@@ -264,7 +289,8 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     return path;
   }
 
-  void _paintRange(Canvas canvas, Path range, double offset, Color color, double topY, double nightAmount) {
+  void _paintRange(Canvas canvas, Path range, double offset, Color color,
+      double topY, double nightAmount) {
     final c = Color.lerp(color, const Color(0xFF0A1526), nightAmount * 0.6)!;
     final paint = Paint()
       ..shader = ui.Gradient.linear(
@@ -311,7 +337,8 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
     }
     // Window lights glow brighter at night.
     final light = Paint()
-      ..color = const Color(0xFFFFCB6B).withValues(alpha: 0.08 + nightAmount * 0.35);
+      ..color =
+          const Color(0xFFFFCB6B).withValues(alpha: 0.08 + nightAmount * 0.35);
     final rng = Random(3);
     for (int i = 0; i < 60; i++) {
       final wx = rng.nextDouble() * _w;
@@ -336,7 +363,11 @@ class Background extends PositionComponent with HasGameReference<FlappyGame> {
 }
 
 class _Cloud {
-  _Cloud({required this.x, required this.y, required this.scale, required this.speed});
+  _Cloud(
+      {required this.x,
+      required this.y,
+      required this.scale,
+      required this.speed});
   double x;
   double y;
   final double scale;
@@ -344,7 +375,11 @@ class _Cloud {
 }
 
 class _Star {
-  _Star({required this.x, required this.y, required this.size, required this.phase});
+  _Star(
+      {required this.x,
+      required this.y,
+      required this.size,
+      required this.phase});
   final double x;
   final double y;
   final double size;

@@ -38,9 +38,11 @@ class Rain extends PositionComponent {
       x: _rng.nextDouble() * (_w + 160) - 80,
       y: initial ? _rng.nextDouble() * _h : -20 - _rng.nextDouble() * 60,
       speed: GameConfig.rainMinSpeed +
-          _rng.nextDouble() * (GameConfig.rainMaxSpeed - GameConfig.rainMinSpeed),
+          _rng.nextDouble() *
+              (GameConfig.rainMaxSpeed - GameConfig.rainMinSpeed),
       length: GameConfig.rainLengthMin +
-          _rng.nextDouble() * (GameConfig.rainLengthMax - GameConfig.rainLengthMin),
+          _rng.nextDouble() *
+              (GameConfig.rainLengthMax - GameConfig.rainLengthMin),
       alpha: 0.35 + _rng.nextDouble() * 0.55,
     );
   }

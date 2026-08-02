@@ -18,12 +18,12 @@ class MainMenu extends StatefulWidget {
 }
 
 class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
-  late final AnimationController _pulse =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
-        ..repeat(reverse: true);
-  late final AnimationController _enter =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
-        ..forward();
+  late final AnimationController _pulse = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1100))
+    ..repeat(reverse: true);
+  late final AnimationController _enter = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 600))
+    ..forward();
 
   @override
   void initState() {
@@ -93,18 +93,21 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
               child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xCC102A3B),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: rank.color.withValues(alpha: 0.7)),
+                    border:
+                        Border.all(color: rank.color.withValues(alpha: 0.7)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.shield_rounded, size: 15, color: rank.color),
                       const SizedBox(width: 6),
-                      Text(rank.name, style: UiKit.label(13, color: rank.color)),
+                      Text(rank.name,
+                          style: UiKit.label(13, color: rank.color)),
                     ],
                   ),
                 ),
@@ -131,7 +134,8 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
                               color: Color(0xFFFF8A5B), size: 16),
                           const SizedBox(width: 4),
                           Text('${Storage.streak} day streak',
-                              style: UiKit.label(13, color: const Color(0xFFFF8A5B))),
+                              style: UiKit.label(13,
+                                  color: const Color(0xFFFF8A5B))),
                         ],
                       ),
                     ],
@@ -211,9 +215,14 @@ class _Title extends StatelessWidget {
               shaderCallback: (r) => const LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFFFF3B0), Color(0xFFFFD447), Color(0xFFE8A317)],
+                colors: [
+                  Color(0xFFFFF3B0),
+                  Color(0xFFFFD447),
+                  Color(0xFFE8A317)
+                ],
               ).createShader(r),
-              child: Text('RAIN', style: UiKit.title(64).copyWith(color: Colors.white)),
+              child: Text('RAIN',
+                  style: UiKit.title(64).copyWith(color: Colors.white)),
             ),
           ],
         ),
@@ -237,43 +246,50 @@ class _MenuIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xAA2C5B78),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white24),
+    return Semantics(
+      button: true,
+      label: badge ? '$label, rewards ready to claim' : label,
+      excludeSemantics: true, // the caption below the icon repeats the label
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xAA2C5B78),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 26),
                 ),
-                child: Icon(icon, color: Colors.white, size: 26),
-              ),
-              if (badge)
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: UiKit.accent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF102A3B), width: 2),
+                if (badge)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: UiKit.accent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: const Color(0xFF102A3B), width: 2),
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(label,
-              style: UiKit.label(12, color: Colors.white.withValues(alpha: 0.8))),
-        ],
+              ],
+            ),
+            const SizedBox(height: 5),
+            Text(label,
+                style: UiKit.label(12,
+                    color: Colors.white.withValues(alpha: 0.8))),
+          ],
+        ),
       ),
     );
   }

@@ -31,7 +31,8 @@ class Lightning extends PositionComponent with HasGameReference<FlappyGame> {
 
   void _scheduleNext() {
     _nextStrike = GameConfig.lightningMinDelay +
-        _rng.nextDouble() * (GameConfig.lightningMaxDelay - GameConfig.lightningMinDelay);
+        _rng.nextDouble() *
+            (GameConfig.lightningMaxDelay - GameConfig.lightningMinDelay);
     _timer = 0;
   }
 

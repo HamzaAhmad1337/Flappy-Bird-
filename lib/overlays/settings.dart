@@ -35,10 +35,7 @@ class _SettingsState extends State<Settings> {
                 children: [
                   Text('SETTINGS', style: UiKit.title(26)),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: _close,
-                    child: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
-                  ),
+                  PanelCloseButton(onTap: _close),
                 ],
               ),
               const SizedBox(height: 18),
@@ -88,7 +85,8 @@ class _SettingsState extends State<Settings> {
               const SizedBox(height: 16),
               Text(
                 'Flappy Rain • made with Flutter & Flame',
-                style: UiKit.label(12, color: Colors.white.withValues(alpha: 0.5)),
+                style:
+                    UiKit.label(12, color: Colors.white.withValues(alpha: 0.5)),
               ),
             ],
           ),
@@ -113,21 +111,31 @@ class _Toggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white70, size: 22),
-          const SizedBox(width: 12),
-          Text(label, style: UiKit.label(17)),
-          const Spacer(),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF3A2E00),
-            activeTrackColor: UiKit.accent,
+    // MergeSemantics ties the row's label to the switch, so a screen reader
+    // announces "Sound, on" instead of an anonymous toggle sitting next to
+    // some unrelated text. The whole row is tappable too — aiming for the
+    // switch alone is a small target on a phone in one hand.
+    return MergeSemantics(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white70, size: 22),
+              const SizedBox(width: 12),
+              Text(label, style: UiKit.label(17)),
+              const Spacer(),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeColor: const Color(0xFF3A2E00),
+                activeTrackColor: UiKit.accent,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

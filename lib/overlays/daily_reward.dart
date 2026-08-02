@@ -18,9 +18,9 @@ class DailyRewardPopup extends StatefulWidget {
 
 class _DailyRewardPopupState extends State<DailyRewardPopup>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 480))
-        ..forward();
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 480))
+    ..forward();
 
   int _coins = 0;
 
@@ -65,50 +65,51 @@ class _DailyRewardPopupState extends State<DailyRewardPopup>
       onDismiss: _close,
       opacity: 0.6,
       child: ScaleTransition(
-          scale: CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: GlassPanel(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('DAILY REWARD', style: UiKit.title(26)),
-                  const SizedBox(height: 6),
-                  Text(
-                    _streak > 1 ? '$_streak day streak!' : 'Welcome back',
-                    style: UiKit.label(15, color: UiKit.accent),
-                  ),
-                  const SizedBox(height: 18),
-                  // Streak ladder — the next few days and what they pay.
+        scale: CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: GlassPanel(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('DAILY REWARD', style: UiKit.title(26)),
+                const SizedBox(height: 6),
+                Text(
+                  _streak > 1 ? '$_streak day streak!' : 'Welcome back',
+                  style: UiKit.label(15, color: UiKit.accent),
+                ),
+                const SizedBox(height: 18),
+                // Streak ladder — the next few days and what they pay.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (int d = _streak; d < _streak + 4; d++)
+                      _DayChip(
+                        day: d,
+                        coins: Progression.dailyRewardFor(d),
+                        isToday: d == _streak,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (_done && _coins > 0) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      for (int d = _streak; d < _streak + 4; d++)
-                        _DayChip(
-                          day: d,
-                          coins: Progression.dailyRewardFor(d),
-                          isToday: d == _streak,
-                        ),
+                      Text('+', style: UiKit.title(28)),
+                      const SizedBox(width: 4),
+                      CoinPill(count: _coins, big: true),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  if (_done && _coins > 0) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('+', style: UiKit.title(28)),
-                        const SizedBox(width: 4),
-                        CoinPill(count: _coins, big: true),
-                      ],
-                    ),
-                  ] else
-                    Text('Already claimed today',
-                        style: UiKit.label(14,
-                            color: Colors.white.withValues(alpha: 0.6))),
-                  const SizedBox(height: 20),
-                  GameButton(label: 'Nice!', icon: Icons.check_rounded, onTap: _close),
-                ],
-              ),
+                ] else
+                  Text('Already claimed today',
+                      style: UiKit.label(14,
+                          color: Colors.white.withValues(alpha: 0.6))),
+                const SizedBox(height: 20),
+                GameButton(
+                    label: 'Nice!', icon: Icons.check_rounded, onTap: _close),
+              ],
+            ),
           ),
         ),
       ),
@@ -117,7 +118,8 @@ class _DailyRewardPopupState extends State<DailyRewardPopup>
 }
 
 class _DayChip extends StatelessWidget {
-  const _DayChip({required this.day, required this.coins, required this.isToday});
+  const _DayChip(
+      {required this.day, required this.coins, required this.isToday});
   final int day;
   final int coins;
   final bool isToday;
@@ -129,7 +131,9 @@ class _DayChip extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isToday ? UiKit.accent.withValues(alpha: 0.18) : const Color(0x22FFFFFF),
+        color: isToday
+            ? UiKit.accent.withValues(alpha: 0.18)
+            : const Color(0x22FFFFFF),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isToday ? UiKit.accent : Colors.white24,
@@ -139,7 +143,8 @@ class _DayChip extends StatelessWidget {
       child: Column(
         children: [
           Text('Day $day',
-              style: UiKit.label(11, color: Colors.white.withValues(alpha: 0.75))),
+              style:
+                  UiKit.label(11, color: Colors.white.withValues(alpha: 0.75))),
           const SizedBox(height: 4),
           Icon(Icons.star_rounded,
               size: 18, color: isToday ? UiKit.accent : Colors.white54),

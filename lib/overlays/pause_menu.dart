@@ -18,7 +18,10 @@ class PauseMenu extends StatelessWidget {
           children: [
             Text('PAUSED', style: UiKit.title(34)),
             const SizedBox(height: 22),
-            GameButton(label: 'Resume', icon: Icons.play_arrow_rounded, onTap: game.resume),
+            GameButton(
+                label: 'Resume',
+                icon: Icons.play_arrow_rounded,
+                onTap: game.resume),
             const SizedBox(height: 12),
             GameButton(
               label: 'Restart',

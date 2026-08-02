@@ -23,6 +23,7 @@ class RunStats {
     required this.bestCombo,
     required this.nearMisses,
     required this.powerupsUsed,
+    this.countsAsRun = true,
   });
 
   final int score;
@@ -30,6 +31,10 @@ class RunStats {
   final int bestCombo;
   final int nearMisses;
   final int powerupsUsed;
+
+  /// False for the tail of a run that was carried past a death by a continue —
+  /// the same run reaching the end twice is still one run played.
+  final bool countsAsRun;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,7 +76,7 @@ class Mission {
         MissionKind.nearMiss => s.nearMisses,
         MissionKind.combo => s.bestCombo,
         MissionKind.powerups => s.powerupsUsed,
-        MissionKind.runs => 1,
+        MissionKind.runs => s.countsAsRun ? 1 : 0,
       };
 
   bool get isPersonalBestStyle =>
@@ -96,7 +101,8 @@ class Achievement {
 
 /// Lifetime totals used by achievement predicates.
 class LifetimeStats {
-  const LifetimeStats(this.best, this.runs, this.coins, this.combo, this.nearMisses, this.powerups);
+  const LifetimeStats(this.best, this.runs, this.coins, this.combo,
+      this.nearMisses, this.powerups);
   final int best, runs, coins, combo, nearMisses, powerups;
 }
 
@@ -158,8 +164,8 @@ class Progression {
         Icons.bolt_rounded, _near50),
     Achievement('powerups_25', 'Power Hungry', 'Grab 25 power-ups',
         Icons.auto_awesome_rounded, _power25),
-    Achievement('runs_50', 'Persistent', 'Play 50 runs',
-        Icons.replay_rounded, _runs50),
+    Achievement(
+        'runs_50', 'Persistent', 'Play 50 runs', Icons.replay_rounded, _runs50),
     Achievement('streak_3', 'Regular', 'Play 3 days in a row',
         Icons.calendar_month_rounded, _streak3),
     Achievement('streak_7', 'Devoted', 'Play 7 days in a row',
@@ -229,8 +235,7 @@ class Progression {
   /// Day numbers are 1-based; clamping guards day 0, which the popup can ask
   /// about for one frame before the claim resolves and would otherwise be
   /// priced *below* day 1.
-  static int dailyRewardFor(int streak) =>
-      10 + min(max(streak, 1) - 1, 6) * 5;
+  static int dailyRewardFor(int streak) => 10 + min(max(streak, 1) - 1, 6) * 5;
 
   static bool get dailyRewardAvailable => Storage.lastDailyDay != todayIndex;
 

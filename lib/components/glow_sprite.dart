@@ -17,7 +17,8 @@ class GlowSprite {
   double get radius => image.width / 2;
 
   /// Renders a white radial falloff of the given pixel size.
-  static Future<GlowSprite> create({int size = 64, double softness = 1.0}) async {
+  static Future<GlowSprite> create(
+      {int size = 64, double softness = 1.0}) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     final r = size / 2.0;

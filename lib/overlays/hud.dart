@@ -17,7 +17,8 @@ class Hud extends StatefulWidget {
 
 class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
   late final AnimationController _ticker =
-      AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
+      AnimationController(vsync: this, duration: const Duration(seconds: 1))
+        ..repeat();
 
   @override
   void dispose() {
@@ -66,7 +67,8 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
                   children: [
                     _PoppingScore(score: score),
                     // The combo readout changes on the same beat as the score.
-                    if (game.comboCount >= 3) _ComboFlame(combo: game.comboCount),
+                    if (game.comboCount >= 3)
+                      _ComboFlame(combo: game.comboCount),
                   ],
                 ),
               ),
@@ -108,7 +110,8 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
             builder: (_, phase, __) => phase == GameState.ready
                 // Sits below centre: the bird hovers at the vertical middle,
                 // and dead-centre text ran straight through it.
-                ? const Align(alignment: Alignment(0, 0.34), child: _ReadyPrompt())
+                ? const Align(
+                    alignment: Alignment(0, 0.34), child: _ReadyPrompt())
                 : const SizedBox.shrink(),
           ),
           // Pause — static.
@@ -116,16 +119,22 @@ class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
             alignment: Alignment.topRight,
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: GestureDetector(
-                onTap: game.pause,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0x552C5B78),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+              child: Semantics(
+                button: true,
+                label: 'Pause',
+                child: GestureDetector(
+                  onTap: game.pause,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0x552C5B78),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    child: const Icon(Icons.pause_rounded,
+                        color: Colors.white, size: 26),
                   ),
-                  child: const Icon(Icons.pause_rounded, color: Colors.white, size: 26),
                 ),
               ),
             ),
@@ -168,7 +177,8 @@ class _ReadyPromptState extends State<_ReadyPrompt>
           const Icon(Icons.touch_app_rounded, color: Colors.white, size: 38),
           const SizedBox(height: 4),
           Text('tap to fly',
-              style: UiKit.label(15, color: Colors.white.withValues(alpha: 0.85))),
+              style:
+                  UiKit.label(15, color: Colors.white.withValues(alpha: 0.85))),
         ],
       ),
     );
@@ -182,16 +192,28 @@ class _ReadyPromptState extends State<_ReadyPrompt>
 /// when other recognizers are in the tree. What we want here is the raw
 /// "screen was pressed" signal, which is also the lowest-latency option. The
 /// pause button is excluded by layout, so nothing competes for this area.
+///
+/// The [Semantics] wrapper is not decoration. A raw Listener produces no
+/// semantics node at all, and with a screen reader running the platform routes
+/// touches through the accessibility layer rather than delivering raw pointers
+/// — so with TalkBack or VoiceOver switched on, tapping did nothing and the
+/// game sat in "get ready" forever. Declaring the action gives the reader
+/// something to activate.
 class _FlapArea extends StatelessWidget {
   const _FlapArea({required this.game});
   final FlappyGame game;
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      behavior: HitTestBehavior.opaque,
-      onPointerDown: (_) => game.flapInput(),
-      child: const SizedBox.expand(),
+    return Semantics(
+      label: 'Flap',
+      hint: 'Activate to flap the bird',
+      onTap: game.flapInput,
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => game.flapInput(),
+        child: const SizedBox.expand(),
+      ),
     );
   }
 }
@@ -249,7 +271,8 @@ class _ComboFlame extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.local_fire_department_rounded, color: color, size: 16 + heat * 6),
+        Icon(Icons.local_fire_department_rounded,
+            color: color, size: 16 + heat * 6),
         const SizedBox(width: 4),
         Text('COMBO x$combo', style: UiKit.label(16, color: color)),
       ],
@@ -284,7 +307,8 @@ class _PowerChip extends StatelessWidget {
                 Text(p.type.label, style: UiKit.label(13)),
                 const Spacer(),
                 Text('${p.remaining.ceil()}',
-                    style: UiKit.label(13, color: Colors.white.withValues(alpha: 0.7))),
+                    style: UiKit.label(13,
+                        color: Colors.white.withValues(alpha: 0.7))),
               ],
             ),
             const SizedBox(height: 4),

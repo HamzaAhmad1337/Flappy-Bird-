@@ -41,7 +41,8 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
   void flap() {
     velocity = GameConfig.flapVelocity;
     _flapImpulse = 1;
-    game.particles.feathers(position.x - 6, position.y + 4, skin.wing, count: 4);
+    game.particles
+        .feathers(position.x - 6, position.y + 4, skin.wing, count: 4);
   }
 
   void idleBob(double dt, double t) {
@@ -82,7 +83,8 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
 
     if (skin.glow) {
       canvas.drawCircle(
-        Offset.zero, r * 1.7,
+        Offset.zero,
+        r * 1.7,
         Paint()
           ..color = skin.trail.withValues(alpha: 0.28)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
@@ -134,9 +136,13 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
     final glow = Paint()
       ..color = Colors.black.withValues(alpha: 0.18)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawOval(Rect.fromCenter(center: const Offset(0, 3), width: r * 2.4, height: r * 1.9), glow);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: const Offset(0, 3), width: r * 2.4, height: r * 1.9),
+        glow);
 
-    final bodyRect = Rect.fromCenter(center: Offset.zero, width: r * 2.3, height: r * 2.0);
+    final bodyRect =
+        Rect.fromCenter(center: Offset.zero, width: r * 2.3, height: r * 2.0);
     final body = Paint()
       ..shader = ui.Gradient.linear(
         bodyRect.topCenter,
@@ -148,7 +154,8 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
 
     final belly = Paint()..color = skin.belly.withValues(alpha: 0.7);
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(-1, 5), width: r * 1.5, height: r * 1.1),
+      Rect.fromCenter(
+          center: const Offset(-1, 5), width: r * 1.5, height: r * 1.1),
       belly,
     );
 
@@ -164,7 +171,8 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
     canvas.save();
     canvas.translate(-2, -1);
     canvas.rotate(angle);
-    final wingRect = Rect.fromCenter(center: const Offset(-4, 2), width: r * 1.7, height: r * 1.15);
+    final wingRect = Rect.fromCenter(
+        center: const Offset(-4, 2), width: r * 1.7, height: r * 1.15);
     final wing = Paint()
       ..shader = ui.Gradient.linear(
         wingRect.topCenter,
@@ -177,7 +185,8 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2
-        ..color = Color.lerp(skin.wing, Colors.black, 0.3)!.withValues(alpha: 0.6),
+        ..color =
+            Color.lerp(skin.wing, Colors.black, 0.3)!.withValues(alpha: 0.6),
     );
     canvas.restore();
   }
@@ -200,8 +209,10 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
         ..strokeWidth = 1
         ..color = Colors.black.withValues(alpha: 0.12),
     );
-    canvas.drawCircle(const Offset(7.6, -6), 2.8, Paint()..color = const Color(0xFF20303A));
-    canvas.drawCircle(const Offset(8.6, -7.2), 1.0, Paint()..color = Colors.white);
+    canvas.drawCircle(
+        const Offset(7.6, -6), 2.8, Paint()..color = const Color(0xFF20303A));
+    canvas.drawCircle(
+        const Offset(8.6, -7.2), 1.0, Paint()..color = Colors.white);
   }
 
   void _drawShield(Canvas canvas) {
@@ -216,7 +227,8 @@ class Bird extends PositionComponent with HasGameReference<FlappyGame> {
       ..color = PowerType.shield.color.withValues(alpha: 0.85 * blink);
     canvas.drawCircle(Offset.zero, r * 1.55, ring);
     canvas.drawCircle(
-      Offset.zero, r * 1.55,
+      Offset.zero,
+      r * 1.55,
       Paint()
         ..color = PowerType.shield.color.withValues(alpha: 0.12 * blink)
         ..style = PaintingStyle.fill,

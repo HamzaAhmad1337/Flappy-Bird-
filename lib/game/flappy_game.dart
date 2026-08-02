@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import '../components/ambience.dart';
 import '../components/background.dart';
 import '../components/bird.dart';
+import '../components/bird_shadow.dart';
 import '../components/coin.dart';
 import '../components/floating_text.dart';
 import '../components/ground.dart';
@@ -51,7 +52,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   /// this: the HUD itself doesn't rebuild every frame (deliberately), so a
   /// plain field would have left the prompt frozen on screen after the first
   /// flap.
-  final ValueNotifier<GameState> phase = ValueNotifier<GameState>(GameState.menu);
+  final ValueNotifier<GameState> phase =
+      ValueNotifier<GameState>(GameState.menu);
 
   GameState get state => phase.value;
   set state(GameState v) => phase.value = v;
@@ -67,6 +69,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   bool get reducedMotion => Storage.reducedMotion;
 
   double scrollSpeed = GameConfig.pipeSpeed;
+
   /// Distance travelled since the last pipe — pipes are spaced by distance.
   double _sinceSpawn = 0;
   late final LevelGenerator _level = LevelGenerator();
@@ -85,8 +88,18 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   int runNearMisses = 0;
   int runPowerups = 0;
 
-  /// Set on death when this run beat the previous best.
+  /// Set on death when this run beat the previous best. Sticky across a
+  /// second chance: if the first leg took the record, the run holds it.
   bool lastRunWasBest = false;
+
+  /// Whether this run has already spent its one second chance.
+  bool usedContinue = false;
+
+  /// A run can be carried past a death once, for coins.
+  bool get canContinue =>
+      state == GameState.gameOver &&
+      !usedContinue &&
+      Storage.coins >= GameConfig.continueCost;
 
   /// Missions completed / achievements unlocked by the run that just ended.
   List<int> lastMissionsCompleted = const [];
@@ -150,9 +163,15 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
   List<({PowerType type, double remaining})> get activePowers {
     final l = <({PowerType type, double remaining})>[];
-    if (shieldRemaining > 0) l.add((type: PowerType.shield, remaining: shieldRemaining));
-    if (slowmoRemaining > 0) l.add((type: PowerType.slowmo, remaining: slowmoRemaining));
-    if (magnetRemaining > 0) l.add((type: PowerType.magnet, remaining: magnetRemaining));
+    if (shieldRemaining > 0) {
+      l.add((type: PowerType.shield, remaining: shieldRemaining));
+    }
+    if (slowmoRemaining > 0) {
+      l.add((type: PowerType.slowmo, remaining: slowmoRemaining));
+    }
+    if (magnetRemaining > 0) {
+      l.add((type: PowerType.magnet, remaining: magnetRemaining));
+    }
     return l;
   }
 
@@ -172,16 +191,17 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     particles = ParticleField();
 
     world.addAll([
-      SkyShaderLayer(),   // volumetric sky (GPU)
-      background,         // mountains / city / haze
+      SkyShaderLayer(), // volumetric sky (GPU)
+      background, // mountains / city / haze
       Ground(),
-      Reflections(),      // wet-ground mirror of the pipes & bird
-      Ambience(),         // fireflies / motes / ground mist
+      Reflections(), // wet-ground mirror of the pipes & bird
+      BirdShadow(), // contact shadow — reads as an altitude cue too
+      Ambience(), // fireflies / motes / ground mist
       bird,
       particles,
       Rain(),
       Lightning(),
-      LensOverlay(),      // rain-on-lens, vignette, grain (GPU)
+      LensOverlay(), // rain-on-lens, vignette, grain (GPU)
     ]);
 
     best.value = Storage.highScore;
@@ -263,7 +283,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   }
 
   @override
-  KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+  KeyEventResult onKeyEvent(
+      KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
     if (event is KeyDownEvent &&
         (event.logicalKey == LogicalKeyboardKey.space ||
             event.logicalKey == LogicalKeyboardKey.arrowUp)) {
@@ -288,6 +309,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     runNearMisses = 0;
     runPowerups = 0;
     lastRunWasBest = false;
+    usedContinue = false;
     _comboTimer = 0;
     _pipesSinceType = 0;
     shieldRemaining = slowmoRemaining = magnetRemaining = 0;
@@ -350,7 +372,11 @@ class FlappyGame extends FlameGame with KeyboardEvents {
       await Storage.addCoins(runCoins);
       wallet.value = Storage.coins;
     }
-    await Storage.incGamesPlayed();
+    // A run that was carried past a death is still one run. Its first leg
+    // already counted, so the second must not count again — otherwise a
+    // continue would quietly farm the "play N runs" mission.
+    final firstDeath = !usedContinue;
+    if (firstDeath) await Storage.incGamesPlayed();
     if (score.value > best.value) {
       lastRunWasBest = true;
       best.value = score.value;
@@ -364,6 +390,7 @@ class FlappyGame extends FlameGame with KeyboardEvents {
       bestCombo: runBestCombo,
       nearMisses: runNearMisses,
       powerupsUsed: runPowerups,
+      countsAsRun: firstDeath,
     ));
     lastMissionsCompleted = result.missionsCompleted;
     lastUnlocked = result.unlocked;
@@ -371,6 +398,48 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
     overlays.remove('hud');
     overlays.add('gameOver');
+  }
+
+  /// Buys the run one more life, keeping the score.
+  ///
+  /// Everything the dead run already banked — coins, near misses, power-ups,
+  /// mission progress — was committed by [_gameOver]. The tallies are zeroed
+  /// here so the *next* death commits only what happens from now on, and the
+  /// board is wiped rather than picked through: reviving into the pipe that
+  /// just killed you is the kind of thing that makes a second chance feel like
+  /// a swindle. The run resumes in [GameState.ready], so the player takes off
+  /// again on their own tap.
+  Future<void> useContinue() async {
+    if (!canContinue) return;
+    usedContinue = true;
+
+    await Storage.addCoins(-GameConfig.continueCost);
+    wallet.value = Storage.coins;
+
+    runCoins = 0;
+    runNearMisses = 0;
+    runPowerups = 0;
+    runBestCombo = 0;
+    comboCount = 0;
+    _comboTimer = 0;
+    lastMissionsCompleted = const [];
+    lastUnlocked = const [];
+
+    _clearField();
+    _level.reset(startCenter: GameConfig.birdStartY);
+    _sinceSpawn = GameConfig.pipeSpacing * 0.35;
+    scrollSpeed = LevelGenerator.speedFor(score.value);
+    shieldRemaining = slowmoRemaining = magnetRemaining = 0;
+    _timeScale = 1;
+    _nearMissTimer = 0;
+    bird.reset();
+    _invuln = GameConfig.continueGrace;
+
+    state = GameState.ready;
+    overlays.remove('gameOver');
+    overlays.add('hud');
+    Sfx.powerup();
+    celebrate('SECOND WIND', PowerType.shield.color);
   }
 
   // ---- Juice helpers -------------------------------------------------------
@@ -386,7 +455,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     comboCount += 1;
     _comboTimer = LevelGenerator.intervalFor(score.value) * 2.4;
     Sfx.swoosh();
-    spawnText('CLOSE!', bird.position + Vector2(0, -40), PowerType.slowmo.color, size: 24);
+    spawnText('CLOSE!', bird.position + Vector2(0, -40), PowerType.slowmo.color,
+        size: 24);
   }
 
   /// A confetti burst + banner used for milestones and personal bests.
@@ -400,7 +470,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   }
 
   void spawnText(String text, Vector2 pos, Color color, {double size = 26}) {
-    world.add(FloatingText(start: pos, text: text, color: color, fontSize: size));
+    world.add(
+        FloatingText(start: pos, text: text, color: color, fontSize: size));
   }
 
   // ---- Loop ----------------------------------------------------------------
@@ -482,17 +553,20 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     final center = placement.gapCenter;
 
     const x = GameConfig.width + 20;
-    final pipe = PipePair(gapCenter: center, gap: gap)..position = Vector2(x, 0);
+    final pipe = PipePair(gapCenter: center, gap: gap)
+      ..position = Vector2(x, 0);
     _pipes.add(pipe);
     world.add(pipe);
 
     _pipesSinceType++;
 
     // Occasionally place a power-up in the gap...
-    if (_pipesSinceType >= 4 && _rng.nextDouble() < GameConfig.powerupSpawnChance) {
+    if (_pipesSinceType >= 4 &&
+        _rng.nextDouble() < GameConfig.powerupSpawnChance) {
       _pipesSinceType = 0;
       final type = PowerType.values[_rng.nextInt(PowerType.values.length)];
-      final p = PowerUp(Vector2(x + GameConfig.pipeWidth / 2 + 120, center), type);
+      final p =
+          PowerUp(Vector2(x + GameConfig.pipeWidth / 2 + 120, center), type);
       _powerups.add(p);
       world.add(p);
     } else if (_rng.nextDouble() < GameConfig.coinSpawnChance) {
@@ -500,7 +574,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
       const n = 3;
       for (int i = 0; i < n; i++) {
         final cy = center + (i - 1) * 34.0;
-        final coin = Coin(Vector2(x + GameConfig.pipeWidth / 2 + 100 + i * 34, cy));
+        final coin =
+            Coin(Vector2(x + GameConfig.pipeWidth / 2 + 100 + i * 34, cy));
         _coins.add(coin);
         world.add(coin);
       }
@@ -521,11 +596,14 @@ class FlappyGame extends FlameGame with KeyboardEvents {
         if (comboCount >= 3 && comboCount % 3 == 0) {
           runCoins += 1; // combo bounty
           spawnText('COMBO x$comboCount  +1', bird.position + Vector2(0, -46),
-              const Color(0xFFFFD447), size: 22);
+              const Color(0xFFFFD447),
+              size: 22);
         }
         // The moment you overtake your own record — called out mid-run because
         // it's the most motivating beat in the whole loop.
-        if (!lastRunWasBest && best.value > 0 && score.value == best.value + 1) {
+        if (!lastRunWasBest &&
+            best.value > 0 &&
+            score.value == best.value + 1) {
           lastRunWasBest = true;
           celebrate('NEW BEST!', const Color(0xFFFFD447));
         }
@@ -562,7 +640,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
         coin.removeFromParent();
         runCoins += 1;
         Sfx.coin();
-        particles.sparkle(coin.position.x, coin.position.y, const Color(0xFFFFD447));
+        particles.sparkle(
+            coin.position.x, coin.position.y, const Color(0xFFFFD447));
       }
     }
     _coins.removeWhere((c) => c.collected || c.isRemoving);
@@ -584,7 +663,9 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     runPowerups += 1;
     Sfx.powerup();
     particles.sparkle(bird.position.x, bird.position.y, type.color, count: 16);
-    spawnText(type.label.toUpperCase(), bird.position + Vector2(0, -46), type.color, size: 22);
+    spawnText(
+        type.label.toUpperCase(), bird.position + Vector2(0, -46), type.color,
+        size: 22);
     switch (type) {
       case PowerType.shield:
         shieldRemaining = type.duration;
@@ -657,8 +738,11 @@ class FlappyGame extends FlameGame with KeyboardEvents {
     _invuln = 1.1;
     Sfx.shield();
     shake(GameConfig.shakeOnShield);
-    particles.burst(bird.position.x, bird.position.y, PowerType.shield.color, count: 22);
-    spawnText('SHIELD!', bird.position + Vector2(0, -46), PowerType.shield.color, size: 22);
+    particles.burst(bird.position.x, bird.position.y, PowerType.shield.color,
+        count: 22);
+    spawnText(
+        'SHIELD!', bird.position + Vector2(0, -46), PowerType.shield.color,
+        size: 22);
     // Nudge the bird toward the gap center to give a fair recovery.
     bird.velocity = GameConfig.flapVelocity * 0.6;
   }

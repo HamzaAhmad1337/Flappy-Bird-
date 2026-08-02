@@ -44,7 +44,8 @@ class PowerUp extends PositionComponent with HasGameReference<FlappyGame> {
 
     // Aura.
     canvas.drawCircle(
-      Offset.zero, r * 1.5 * pulse,
+      Offset.zero,
+      r * 1.5 * pulse,
       Paint()
         ..color = type.color.withValues(alpha: 0.25)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
@@ -63,13 +64,15 @@ class PowerUp extends PositionComponent with HasGameReference<FlappyGame> {
     } else {
       final body = Paint()
         ..shader = ui.Gradient.radial(
-          const Offset(-5, -5), r * 1.8,
+          const Offset(-5, -5),
+          r * 1.8,
           [Color.lerp(type.color, Colors.white, 0.5)!, type.color],
         );
       canvas.drawCircle(Offset.zero, r, body);
     }
     canvas.drawCircle(
-      Offset.zero, r,
+      Offset.zero,
+      r,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5
@@ -100,15 +103,26 @@ class PowerUp extends PositionComponent with HasGameReference<FlappyGame> {
         break;
       case PowerType.slowmo:
         // clock
-        canvas.drawCircle(Offset.zero, r * 0.5, paint..style = PaintingStyle.stroke);
+        canvas.drawCircle(
+            Offset.zero, r * 0.5, paint..style = PaintingStyle.stroke);
         canvas.drawLine(Offset.zero, const Offset(0, -r * 0.34), paint);
         canvas.drawLine(Offset.zero, const Offset(r * 0.24, 0), paint);
         break;
       case PowerType.magnet:
-        final rect = Rect.fromCircle(center: const Offset(0, r * 0.1), radius: r * 0.42);
-        canvas.drawArc(rect, pi, pi, false, paint..style = PaintingStyle.stroke..strokeWidth = 4);
-        canvas.drawLine(const Offset(-r * 0.42, r * 0.1), const Offset(-r * 0.42, r * 0.5), paint..strokeWidth = 4);
-        canvas.drawLine(const Offset(r * 0.42, r * 0.1), const Offset(r * 0.42, r * 0.5), paint);
+        final rect =
+            Rect.fromCircle(center: const Offset(0, r * 0.1), radius: r * 0.42);
+        canvas.drawArc(
+            rect,
+            pi,
+            pi,
+            false,
+            paint
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 4);
+        canvas.drawLine(const Offset(-r * 0.42, r * 0.1),
+            const Offset(-r * 0.42, r * 0.5), paint..strokeWidth = 4);
+        canvas.drawLine(const Offset(r * 0.42, r * 0.1),
+            const Offset(r * 0.42, r * 0.5), paint);
         break;
     }
   }

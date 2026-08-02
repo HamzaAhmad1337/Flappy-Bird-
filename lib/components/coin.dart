@@ -60,7 +60,8 @@ class Coin extends PositionComponent with HasGameReference<FlappyGame> {
       canvas.drawImageRect(
         sheet,
         Rect.fromLTWH(idx.abs() * fw, 0, fw, fh),
-        Rect.fromCenter(center: Offset.zero, width: r * 2.5, height: r * 2.5 * fh / fw),
+        Rect.fromCenter(
+            center: Offset.zero, width: r * 2.5, height: r * 2.5 * fh / fw),
         Paint()..filterQuality = FilterQuality.high,
       );
       canvas.restore();
@@ -73,13 +74,15 @@ class Coin extends PositionComponent with HasGameReference<FlappyGame> {
 
     final face = Paint()
       ..shader = ui.Gradient.radial(
-        const Offset(-4, -4), r * 1.6,
+        const Offset(-4, -4),
+        r * 1.6,
         const [Color(0xFFFFF3B0), Color(0xFFFFC93C), Color(0xFFC8860B)],
         const [0.0, 0.6, 1.0],
       );
     canvas.drawCircle(Offset.zero, r, face);
     canvas.drawCircle(
-      Offset.zero, r,
+      Offset.zero,
+      r,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5
@@ -87,7 +90,8 @@ class Coin extends PositionComponent with HasGameReference<FlappyGame> {
     );
     // Inner ring + star.
     canvas.drawCircle(
-      Offset.zero, r * 0.62,
+      Offset.zero,
+      r * 0.62,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.6
@@ -95,7 +99,8 @@ class Coin extends PositionComponent with HasGameReference<FlappyGame> {
     );
     _drawStar(canvas, r * 0.5, const Color(0xFF8A5D00));
     // Glint.
-    canvas.drawCircle(const Offset(-r * 0.4, -r * 0.4), r * 0.16, Paint()..color = Colors.white.withValues(alpha: 0.9));
+    canvas.drawCircle(const Offset(-r * 0.4, -r * 0.4), r * 0.16,
+        Paint()..color = Colors.white.withValues(alpha: 0.9));
     canvas.restore();
   }
 

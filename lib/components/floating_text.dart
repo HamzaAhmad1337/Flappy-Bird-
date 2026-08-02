@@ -47,7 +47,10 @@ class FloatingText extends PositionComponent {
           fontWeight: FontWeight.w900,
           color: color.withValues(alpha: alpha),
           shadows: [
-            Shadow(color: Colors.black.withValues(alpha: alpha * 0.6), blurRadius: 4, offset: const Offset(0, 2)),
+            Shadow(
+                color: Colors.black.withValues(alpha: alpha * 0.6),
+                blurRadius: 4,
+                offset: const Offset(0, 2)),
           ],
         ),
       )

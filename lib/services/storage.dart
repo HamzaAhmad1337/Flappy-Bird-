@@ -62,7 +62,8 @@ class Storage {
 
   /// Day index of the last claimed daily reward (-1 = never).
   static int get lastDailyDay => _prefs?.getInt(_kLastDaily) ?? -1;
-  static Future<void> setLastDailyDay(int v) async => _prefs?.setInt(_kLastDaily, v);
+  static Future<void> setLastDailyDay(int v) async =>
+      _prefs?.setInt(_kLastDaily, v);
 
   static int get streak => _prefs?.getInt(_kStreak) ?? 0;
   static Future<void> setStreak(int v) async => _prefs?.setInt(_kStreak, v);
@@ -73,7 +74,8 @@ class Storage {
   static const _kMissionDone = 'flappy_rain_mission_done_v1';
 
   static int get missionDay => _prefs?.getInt(_kMissionDay) ?? -1;
-  static Future<void> setMissionDay(int v) async => _prefs?.setInt(_kMissionDay, v);
+  static Future<void> setMissionDay(int v) async =>
+      _prefs?.setInt(_kMissionDay, v);
 
   static List<int> get missionProgress {
     final raw = _prefs?.getStringList(_kMissionProg);
@@ -90,8 +92,8 @@ class Storage {
     return raw.map((e) => e == '1').toList();
   }
 
-  static Future<void> setMissionClaimed(List<bool> v) async =>
-      _prefs?.setStringList(_kMissionDone, v.map((e) => e ? '1' : '0').toList());
+  static Future<void> setMissionClaimed(List<bool> v) async => _prefs
+      ?.setStringList(_kMissionDone, v.map((e) => e ? '1' : '0').toList());
 
   // ---- Progression: achievements & lifetime stats --------------------------
   static const _kAchievements = 'flappy_rain_achievements_v1';
@@ -117,7 +119,8 @@ class Storage {
   static int get lifetimeNearMisses => _prefs?.getInt(_kLifeNear) ?? 0;
   static int get lifetimePowerups => _prefs?.getInt(_kLifePower) ?? 0;
   static int get bestCombo => _prefs?.getInt(_kBestCombo) ?? 0;
-  static Future<void> setBestCombo(int v) async => _prefs?.setInt(_kBestCombo, v);
+  static Future<void> setBestCombo(int v) async =>
+      _prefs?.setInt(_kBestCombo, v);
 
   static Future<void> addLifetime({
     int coins = 0,
@@ -137,7 +140,8 @@ class Storage {
   static Future<void> setMusicOn(bool v) async => _prefs?.setBool(_kMusic, v);
 
   static bool get hapticsOn => _prefs?.getBool(_kHaptics) ?? true;
-  static Future<void> setHapticsOn(bool v) async => _prefs?.setBool(_kHaptics, v);
+  static Future<void> setHapticsOn(bool v) async =>
+      _prefs?.setBool(_kHaptics, v);
 
   static bool get reducedMotion => _prefs?.getBool(_kMotion) ?? false;
   static Future<void> setReducedMotion(bool v) async =>

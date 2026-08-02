@@ -22,7 +22,8 @@ class UiKit {
         ],
       );
 
-  static TextStyle label(double size, {Color color = Colors.white}) => TextStyle(
+  static TextStyle label(double size, {Color color = Colors.white}) =>
+      TextStyle(
         fontFamily: fontFamily,
         fontSize: size,
         fontWeight: FontWeight.w700,
@@ -69,6 +70,32 @@ class ModalScrim extends StatelessWidget {
   }
 }
 
+/// The X in a panel's top-right corner.
+///
+/// Shared so every panel closes with the same target and the same screen-reader
+/// announcement — an icon inside a bare GestureDetector reads as nothing at all.
+class PanelCloseButton extends StatelessWidget {
+  const PanelCloseButton({super.key, required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Close',
+      child: GestureDetector(
+        onTap: onTap,
+        // Padding rather than a bare icon: 28px of glyph is under the 48px
+        // minimum touch target both platforms ask for.
+        child: const Padding(
+          padding: EdgeInsets.all(10),
+          child: Icon(Icons.close_rounded, color: Colors.white, size: 28),
+        ),
+      ),
+    );
+  }
+}
+
 /// A little golden coin balance pill.
 class CoinPill extends StatelessWidget {
   const CoinPill({super.key, required this.count, this.big = false});
@@ -79,7 +106,8 @@ class CoinPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = big ? 22.0 : 16.0;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: big ? 16 : 12, vertical: big ? 8 : 5),
+      padding: EdgeInsets.symmetric(
+          horizontal: big ? 16 : 12, vertical: big ? 8 : 5),
       decoration: BoxDecoration(
         color: const Color(0xCC102A3B),
         borderRadius: BorderRadius.circular(30),
@@ -89,12 +117,15 @@ class CoinPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: s, height: s,
+            width: s,
+            height: s,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [Color(0xFFFFF3B0), Color(0xFFFFC93C)]),
+              gradient: RadialGradient(
+                  colors: [Color(0xFFFFF3B0), Color(0xFFFFC93C)]),
             ),
-            child: Icon(Icons.star_rounded, size: s * 0.7, color: const Color(0x778A5D00)),
+            child: Icon(Icons.star_rounded,
+                size: s * 0.7, color: const Color(0x778A5D00)),
           ),
           SizedBox(width: big ? 8 : 6),
           Text('$count', style: UiKit.label(big ? 20 : 15)),
@@ -119,7 +150,8 @@ class GlassPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: UiKit.panelBorder, width: 1.5),
         boxShadow: const [
-          BoxShadow(color: Color(0x66000000), blurRadius: 30, offset: Offset(0, 12)),
+          BoxShadow(
+              color: Color(0x66000000), blurRadius: 30, offset: Offset(0, 12)),
         ],
       ),
       child: child,
@@ -152,40 +184,52 @@ class _GameButtonState extends State<GameButton> {
   @override
   Widget build(BuildContext context) {
     final Color base = widget.primary ? UiKit.accent : const Color(0xFF2C5B78);
-    final Color textColor = widget.primary ? const Color(0xFF3A2E00) : Colors.white;
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _down = true),
-      onTapUp: (_) => setState(() => _down = false),
-      onTapCancel: () => setState(() => _down = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
-        transform: Matrix4.translationValues(0, _down ? 3 : 0, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [base, Color.lerp(base, Colors.black, 0.25)!],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Color.lerp(base, Colors.black, 0.5)!,
-              offset: Offset(0, _down ? 2 : 5),
-              blurRadius: 0,
+    final Color textColor =
+        widget.primary ? const Color(0xFF3A2E00) : Colors.white;
+    // Announced as a button to TalkBack/VoiceOver. The label is already a Text
+    // child, but a raw GestureDetector around it is not focusable or activatable
+    // by a screen reader, so every one of these was invisible to one.
+    return Semantics(
+      button: true,
+      label: widget.label,
+      // Without this the child Text contributes its own node and the label is
+      // announced twice — "PLAY, PLAY". Verified against Flutter's live
+      // semantics tree, not assumed.
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _down = true),
+        onTapUp: (_) => setState(() => _down = false),
+        onTapCancel: () => setState(() => _down = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 90),
+          transform: Matrix4.translationValues(0, _down ? 3 : 0, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [base, Color.lerp(base, Colors.black, 0.25)!],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon, color: textColor, size: 22),
-              const SizedBox(width: 8),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Color.lerp(base, Colors.black, 0.5)!,
+                offset: Offset(0, _down ? 2 : 5),
+                blurRadius: 0,
+              ),
             ],
-            Text(widget.label, style: UiKit.label(18, color: textColor)),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                Icon(widget.icon, color: textColor, size: 22),
+                const SizedBox(width: 8),
+              ],
+              Text(widget.label, style: UiKit.label(18, color: textColor)),
+            ],
+          ),
         ),
       ),
     );

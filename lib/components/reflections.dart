@@ -95,7 +95,8 @@ class Reflections extends PositionComponent with HasGameReference<FlappyGame> {
       if (bodyTex != null) {
         canvas.drawImageRect(
           bodyTex,
-          Rect.fromLTWH(0, 0, bodyTex.width.toDouble(), bodyTex.height.toDouble()),
+          Rect.fromLTWH(
+              0, 0, bodyTex.width.toDouble(), bodyTex.height.toDouble()),
           rect,
           Paint()..filterQuality = FilterQuality.low,
         );

@@ -78,11 +78,7 @@ class _ShopState extends State<Shop> {
                       builder: (_, coins, __) => CoinPill(count: coins),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: _close,
-                      child: const Icon(Icons.close_rounded,
-                          color: Colors.white, size: 28),
-                    ),
+                    PanelCloseButton(onTap: _close),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -150,36 +146,48 @@ class _SkinCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color border =
         selected ? UiKit.accent : (unlocked ? Colors.white24 : Colors.white10);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0x33000000),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: border, width: selected ? 2.5 : 1.2),
-        ),
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  _BirdPreview(skin: skin),
-                  if (!unlocked)
-                    const Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Icon(Icons.lock_rounded,
-                          color: Colors.white70, size: 18),
-                    ),
-                ],
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: selected
+          ? '${skin.name}, equipped'
+          : unlocked
+              ? '${skin.name}, tap to equip'
+              : '${skin.name}, locked, costs ${skin.price} coins',
+      // The card already says the name and the price in its own Text children;
+      // the label above states them in a sentence, so drop the duplicates.
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0x33000000),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: border, width: selected ? 2.5 : 1.2),
+          ),
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    _BirdPreview(skin: skin),
+                    if (!unlocked)
+                      const Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Icon(Icons.lock_rounded,
+                            color: Colors.white70, size: 18),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            Text(skin.name, style: UiKit.label(15)),
-            const SizedBox(height: 6),
-            _action(),
-          ],
+              Text(skin.name, style: UiKit.label(15)),
+              const SizedBox(height: 6),
+              _action(),
+            ],
+          ),
         ),
       ),
     );

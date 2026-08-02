@@ -44,7 +44,10 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
     _drawPipe(canvas, top: bottomPipeTop, bottom: groundY, capAtBottom: false);
   }
 
-  void _drawPipe(Canvas canvas, {required double top, required double bottom, required bool capAtBottom}) {
+  void _drawPipe(Canvas canvas,
+      {required double top,
+      required double bottom,
+      required bool capAtBottom}) {
     if (bottom <= top) return;
 
     // Preferred path: the offline-rendered weathered metal tube.
@@ -72,12 +75,12 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
         ],
         const [0.0, 0.22, 0.42, 0.7, 1.0],
       );
-    final bodyRRect = RRect.fromRectAndRadius(bodyRect, const Radius.circular(6));
+    final bodyRRect =
+        RRect.fromRectAndRadius(bodyRect, const Radius.circular(6));
     canvas.drawRRect(bodyRRect, body);
 
     // Subtle vertical highlight streak (wet look in the rain).
-    final streak = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12);
+    final streak = Paint()..color = Colors.white.withValues(alpha: 0.12);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(_w * 0.30, top, _w * 0.10, bottom - top),
@@ -140,17 +143,32 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
     final sx = _w / body.width;
     final sy = tile / body.height;
     final m = Float64List.fromList([
-      sx, 0, 0, 0,
-      0, sy, 0, 0,
-      0, 0, 1, 0,
-      0, top, 0, 1,
+      sx,
+      0,
+      0,
+      0,
+      0,
+      sy,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      top,
+      0,
+      1,
     ]);
     final tint = ColorFilter.mode(game.worldTint, BlendMode.modulate);
     final paint = Paint()
       ..filterQuality = FilterQuality.medium
       ..colorFilter = tint
       ..shader = ImageShader(
-        body, TileMode.clamp, TileMode.repeated, m,
+        body,
+        TileMode.clamp,
+        TileMode.repeated,
+        m,
         filterQuality: FilterQuality.medium,
       );
     canvas.drawRect(Rect.fromLTWH(0, top, _w, bottom - top), paint);
@@ -177,7 +195,8 @@ class PipePair extends PositionComponent with HasGameReference<FlappyGame> {
   bool collidesWith(({double x, double y, double r}) b) {
     const groundY = GameConfig.height - GameConfig.groundHeight;
     final top = Rect.fromLTWH(position.x, 0, _w, topPipeBottom);
-    final bottom = Rect.fromLTWH(position.x, bottomPipeTop, _w, groundY - bottomPipeTop);
+    final bottom =
+        Rect.fromLTWH(position.x, bottomPipeTop, _w, groundY - bottomPipeTop);
     return _circleHitsRect(b, top) || _circleHitsRect(b, bottom);
   }
 

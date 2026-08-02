@@ -80,11 +80,7 @@ class _MissionsPanelState extends State<MissionsPanel>
                       builder: (_, c, __) => CoinPill(count: c),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: _close,
-                      child: const Icon(Icons.close_rounded,
-                          color: Colors.white, size: 28),
-                    ),
+                    PanelCloseButton(onTap: _close),
                   ],
                 ),
                 const SizedBox(height: 10),

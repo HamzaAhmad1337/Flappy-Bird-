@@ -27,7 +27,8 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
     size = Vector2(_w, _h);
     // Pre-generate dirt flecks across a double-width tile for seamless scroll.
     _flecks = List.generate(120, (_) {
-      return Offset(_rng.nextDouble() * _w * 2, 18 + _rng.nextDouble() * (_h - 24));
+      return Offset(
+          _rng.nextDouble() * _w * 2, 18 + _rng.nextDouble() * (_h - 24));
     });
   }
 
@@ -55,17 +56,32 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
       final sy = _h / tex.height;
       final tx = -(_offset % tile);
       final m = Float64List.fromList([
-        sx, 0, 0, 0,
-        0, sy, 0, 0,
-        0, 0, 1, 0,
-        tx, 0, 0, 1,
+        sx,
+        0,
+        0,
+        0,
+        0,
+        sy,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        tx,
+        0,
+        0,
+        1,
       ]);
       final paint = Paint()
         ..filterQuality = FilterQuality.medium
         // Track the sky, or the ground stays daylit under a midnight storm.
         ..colorFilter = ColorFilter.mode(game.worldTint, BlendMode.modulate)
         ..shader = ImageShader(
-          tex, TileMode.repeated, TileMode.clamp, m,
+          tex,
+          TileMode.repeated,
+          TileMode.clamp,
+          m,
           filterQuality: FilterQuality.medium,
         );
       canvas.drawRect(const Rect.fromLTWH(0, 0, _w, _h), paint);
@@ -104,7 +120,9 @@ class Ground extends PositionComponent with HasGameReference<FlappyGame> {
     // Scalloped grass blades hanging into the dirt, scrolling.
     final blade = Paint()..color = GameConfig.groundGrass;
     const bladeW = 16.0;
-    for (double x = -((_offset) % bladeW) - bladeW; x < _w + bladeW; x += bladeW) {
+    for (double x = -((_offset) % bladeW) - bladeW;
+        x < _w + bladeW;
+        x += bladeW) {
       final path = Path()
         ..moveTo(x, grassH - 2)
         ..quadraticBezierTo(x + bladeW / 2, grassH + 8, x + bladeW, grassH - 2)

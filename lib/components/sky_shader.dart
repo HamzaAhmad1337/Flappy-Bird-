@@ -9,7 +9,8 @@ import '../services/assets.dart';
 ///
 /// Sits behind everything. When the shader is unavailable this component draws
 /// nothing and [Background] falls back to painting its own gradient sky.
-class SkyShaderLayer extends PositionComponent with HasGameReference<FlappyGame> {
+class SkyShaderLayer extends PositionComponent
+    with HasGameReference<FlappyGame> {
   SkyShaderLayer() : super(priority: -120);
 
   double _t = 0;

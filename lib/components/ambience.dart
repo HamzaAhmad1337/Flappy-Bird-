@@ -72,7 +72,8 @@ class Ambience extends PositionComponent with HasGameReference<FlappyGame> {
   void update(double dt) {
     _t += dt;
     // Ambient life drifts against the scroll, a touch slower than the world.
-    final scroll = (game.state == GameState.playing ? game.scrollSpeed : 26.0) * 0.18;
+    final scroll =
+        (game.state == GameState.playing ? game.scrollSpeed : 26.0) * 0.18;
     for (final m in _motes) {
       m.x -= (m.drift + scroll) * dt;
       if (m.x < -12) {
@@ -175,8 +176,8 @@ class Ambience extends PositionComponent with HasGameReference<FlappyGame> {
 
     for (final m in _mist) {
       final wobble = sin(_t * 0.6 + m.phase) * 4;
-      paint.color = tint.withValues(
-          alpha: 0.10 + 0.05 * sin(_t * 0.9 + m.phase).abs());
+      paint.color =
+          tint.withValues(alpha: 0.10 + 0.05 * sin(_t * 0.9 + m.phase).abs());
       canvas.drawImageRect(
         puff.image,
         src,
