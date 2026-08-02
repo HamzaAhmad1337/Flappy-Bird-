@@ -26,7 +26,9 @@ class LensOverlay extends PositionComponent with HasGameReference<FlappyGame> {
   @override
   void render(Canvas canvas) {
     final shader = GameAssets.lensShader;
-    if (shader == null || game.reducedMotion) return;
+    // A full-screen fragment shader every frame is the single most expensive
+    // thing here, so it is the first thing dropped on a struggling device.
+    if (shader == null || !game.richEffects) return;
 
     shader
       ..setFloat(0, GameConfig.width)

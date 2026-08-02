@@ -46,8 +46,10 @@ void main() {
       expect(a.map((m) => '${m.kind}:${m.target}'),
           b.map((m) => '${m.kind}:${m.target}'));
       expect(a.map((m) => m.kind).toSet().length, 3, reason: 'no duplicates');
-      expect(a.map((m) => '${m.kind}:${m.target}').join() !=
-          c.map((m) => '${m.kind}:${m.target}').join(), isTrue);
+      expect(
+          a.map((m) => '${m.kind}:${m.target}').join() !=
+              c.map((m) => '${m.kind}:${m.target}').join(),
+          isTrue);
     });
 
     test('targets and rewards are always positive', () {

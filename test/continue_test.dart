@@ -7,7 +7,8 @@ import 'package:flappy_rain/services/progression.dart';
 /// their coin balance, and whether one run can be made to count as several.
 void main() {
   group('continue pricing', () {
-    test('costs more than a typical run earns, less than the cheapest skin', () {
+    test('costs more than a typical run earns, less than the cheapest skin',
+        () {
       // Priced so it is a real decision — free would make death meaningless,
       // and skin-priced would make the shop feel held hostage.
       expect(GameConfig.continueCost, greaterThan(0));

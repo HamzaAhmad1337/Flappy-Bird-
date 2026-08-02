@@ -30,7 +30,8 @@ void main() {
             reason: 'at score $score the bird cannot climb $maxShift px '
                 'in ${seconds.toStringAsFixed(2)}s (max ${climb.toStringAsFixed(0)})');
         expect(drop, greaterThan(maxShift),
-            reason: 'at score $score the bird cannot fall $maxShift px in time');
+            reason:
+                'at score $score the bird cannot fall $maxShift px in time');
       }
     });
 
@@ -191,7 +192,8 @@ int _simulate({required int seed, required int cap, bool mindless = false}) {
       // pipes drags the bird toward the next gap and clips the current one.
       var targetY = GameConfig.height / 2;
       for (final p in pipes) {
-        if (p.x + GameConfig.pipeWidth > GameConfig.birdX - GameConfig.birdRadius) {
+        if (p.x + GameConfig.pipeWidth >
+            GameConfig.birdX - GameConfig.birdRadius) {
           targetY = p.center;
           break;
         }
@@ -223,8 +225,8 @@ int _simulate({required int seed, required int cap, bool mindless = false}) {
       v = 0;
     }
     for (final p in pipes) {
-      final overlapsX =
-          GameConfig.birdX + r > p.x && GameConfig.birdX - r < p.x + GameConfig.pipeWidth;
+      final overlapsX = GameConfig.birdX + r > p.x &&
+          GameConfig.birdX - r < p.x + GameConfig.pipeWidth;
       if (!overlapsX) continue;
       if (y - r < p.center - p.gap / 2 || y + r > p.center + p.gap / 2) {
         return score;

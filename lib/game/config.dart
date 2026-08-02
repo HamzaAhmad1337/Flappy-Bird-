@@ -90,6 +90,16 @@ class GameConfig {
   // ---- Day / night cycle ---------------------------------------------------
   static const double dayCycleSeconds = 75; // full dawn→day→dusk→night loop
 
+  // ---- Adaptive quality ----------------------------------------------------
+  /// A frame slower than this counts as the device struggling. 25ms is 40fps —
+  /// comfortably below the 60fps target, but not so tight that an ordinary
+  /// hitch (a GC pause, an overlay rebuild) reads as a slow device.
+  static const double slowFrameSeconds = 0.025;
+
+  /// How much *sustained* slowness it takes before shedding effects. Long
+  /// enough that a loading stutter or a lock-screen resume can't trip it.
+  static const double slowSustainSeconds = 2.5;
+
   // ---- Rendering -----------------------------------------------------------
   static const double lensWetness = 0.85; // rain-on-lens strength (0..1)
   static const double stormIntensity = 0.72; // cloud density / sky darkening

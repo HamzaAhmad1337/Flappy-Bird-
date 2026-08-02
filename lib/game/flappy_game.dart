@@ -116,6 +116,34 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   double _nearMissTimer = 0;
   double _shake = 0;
 
+  /// Set once the device has shown it cannot hold frame rate, after which the
+  /// two most expensive passes — the full-screen lens shader and the wet-ground
+  /// reflection's offscreen layer — stop being drawn.
+  ///
+  /// One-way for the rest of the session on purpose. Restoring effects the
+  /// moment frames recover would make the game oscillate between looks, and a
+  /// scene that keeps changing its mind is worse than one that is simply a
+  /// little plainer. A restart re-evaluates from scratch.
+  bool lowPower = false;
+  double _slowFor = 0;
+
+  /// True while the expensive passes are worth drawing.
+  bool get richEffects => !lowPower && !reducedMotion;
+
+  /// Feeds the guard the *unclamped* frame time. Using the clamped step would
+  /// hide exactly the slowness this is looking for: [maxTimeStep] caps dt at
+  /// 33ms, so a device rendering at 4fps would still report healthy frames.
+  void _trackFrameRate(double rawDt) {
+    if (lowPower) return;
+    if (rawDt > GameConfig.slowFrameSeconds) {
+      _slowFor += rawDt;
+      if (_slowFor >= GameConfig.slowSustainSeconds) lowPower = true;
+    } else {
+      // Decay faster than it accumulates, so only sustained slowness counts.
+      _slowFor = max(0, _slowFor - rawDt * 2);
+    }
+  }
+
   bool get shieldActive => shieldRemaining > 0;
   bool get magnetActive => magnetRemaining > 0;
   double get skyPhase => (_worldTime / GameConfig.dayCycleSeconds) % 1.0;
@@ -478,6 +506,8 @@ class FlappyGame extends FlameGame with KeyboardEvents {
 
   @override
   void update(double dt) {
+    // Judge the device on the real frame time, before the clamp below hides it.
+    _trackFrameRate(dt);
     // Never integrate a huge frame in one go (see maxTimeStep).
     dt = min(dt, maxTimeStep);
 

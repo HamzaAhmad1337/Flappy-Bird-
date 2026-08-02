@@ -41,7 +41,8 @@ void main() {
     // Regression: an unbounded frame step used to apply hundreds of ms of
     // gravity at once (the hitch when overlays rebuild as a run starts), which
     // teleported the bird into the ground and ended the run instantly.
-    test('a long frame cannot move the bird further than the playable height', () {
+    test('a long frame cannot move the bird further than the playable height',
+        () {
       const step = FlappyGame.maxTimeStep;
       // Worst case: already at terminal velocity for one clamped step.
       const worstDrop = GameConfig.maxFallSpeed * step;
@@ -67,8 +68,7 @@ void main() {
     // to be tinted to track the sky — otherwise the ground and pipes stay
     // daylit under a midnight storm.
     test('the world tint darkens at night and is neutral at midday', () {
-      double luminance(Color c) =>
-          0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+      double luminance(Color c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 
       // dayness is a cosine of the phase: 0.25 is midday, 0.75 midnight.
       double daynessAt(double phase) =>

@@ -39,7 +39,9 @@ class Reflections extends PositionComponent with HasGameReference<FlappyGame> {
 
   @override
   void render(Canvas canvas) {
-    if (game.reducedMotion) return;
+    // saveLayer allocates an offscreen render target every frame — the second
+    // biggest cost in the scene, and the second thing dropped when frames slip.
+    if (!game.richEffects) return;
 
     // Own layer so the gradient mask below only eats the reflection.
     canvas.saveLayer(_bounds, Paint());
