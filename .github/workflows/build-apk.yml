@@ -1,0 +1,110 @@
+name: Build installable app
+
+# Produces the files you actually install:
+#   * flappy-rain-apk       — a universal .apk you can download onto an Android
+#                             phone and install by tapping it
+#   * flappy-rain-aab       — the .aab Google Play wants for a store listing
+#
+# Runs on every push to the dev branch and on demand from the Actions tab.
+# Tagging a commit `v1.0.0` also publishes the APK as a GitHub Release, which
+# gives you a permanent download link you can send to anyone.
+
+on:
+  push:
+    branches: ['claude/flappy-bird-game-dev-u9xw01', main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed only by the release job
+
+jobs:
+  android:
+    name: Android (APK + AAB)
+    runs-on: ubuntu-latest
+    env:
+      # The `secrets` context is not available in a step-level `if`, so the
+      # presence of a keystore is resolved here, at job level, where it is.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub's runners already carry the Android SDK; this only needs a JDK
+      # and Flutter on top of it.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: stable
+          cache: true
+
+      - name: Fetch packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      # An unsigned APK cannot be installed by anything. When the repository
+      # has an upload keystore configured (see RELEASE.md) it is used; without
+      # one the build falls back to the debug key, which still produces an APK
+      # that installs and runs on any phone — it just isn't Play-uploadable.
+      - name: Configure signing key
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/upload.jks
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Build App Bundle
+        run: flutter build appbundle --release
+
+      - name: Name the APK something a human recognises
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/flappy-rain.apk
+          cp build/app/outputs/bundle/release/app-release.aab dist/flappy-rain.aab
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flappy-rain-apk
+          path: dist/flappy-rain.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flappy-rain-aab
+          path: dist/flappy-rain.aab
+          if-no-files-found: error
+
+      # A tagged build becomes a permanent, shareable download link.
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/flappy-rain.apk
+            dist/flappy-rain.aab
+          body: |
+            Download `flappy-rain.apk` below and open it on your Android phone
+            to install. You may need to allow installs from your browser once,
+            under Settings → Apps → Special access → Install unknown apps.
