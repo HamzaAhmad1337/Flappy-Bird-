@@ -3,6 +3,21 @@
 Everything here is the work that can only be done on your own machine and
 under your own developer accounts. The app itself is complete.
 
+## The installable build already exists
+
+`.github/workflows/build-apk.yml` builds the app on every push and publishes
+it at **[releases/latest](https://github.com/HamzaAhmad1337/Flappy-Bird-/releases/latest)**
+— `flappy-rain.apk` to install directly on a phone, `flappy-rain.aab` to
+upload to Play. Nothing below is needed just to play the game; it is needed to
+put the game on a store.
+
+That build is signed with the debug key, which is what makes it installable
+without any setup. Google Play will reject a debug-signed bundle, so before
+your first upload, generate an upload key and add it to the repository as
+secrets — `ANDROID_KEYSTORE_BASE64` (the .jks, base64-encoded),
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `ANDROID_STORE_PASSWORD`. The
+workflow picks them up automatically and signs with them instead.
+
 ## Before the first upload — three things only you can set
 
 1. **Application id / bundle id.** Both platforms currently use the
@@ -49,9 +64,10 @@ release build, and the Dart AOT code — most of the app's size — isn't shrunk
 either way. Turn `isMinifyEnabled`/`isShrinkResources` on only after you've run
 a shrunk build on a real device.
 
-**Not verified here:** this container has no Android SDK, so the Gradle changes
-above were never compiled. Run `flutter build appbundle --release` once before
-you rely on them.
+These Gradle changes are exercised on every CI run, so the signing fallback
+and the release build are known to work. What has *not* been exercised is the
+upload-key path — no keystore secret exists yet, so that branch first runs the
+day you add one.
 
 ## iOS
 

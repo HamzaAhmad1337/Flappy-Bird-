@@ -9,6 +9,22 @@ by a small PBR renderer, the sky and lens effects are real GPU fragment
 shaders, and the sound is synthesized. Nothing was hand-painted in a binary
 editor, so the whole look is editable in code.
 
+## 📱 Install it
+
+**[→ Download the latest APK](https://github.com/HamzaAhmad1337/Flappy-Bird-/releases/latest)**
+
+Open the downloaded `flappy-rain.apk` on an Android phone and tap Install.
+Android asks once whether to allow installs from whichever app you downloaded
+with — allow it, and the install continues. No developer tools, no sideloading
+setup, nothing to configure.
+
+Every push rebuilds that link, so it always points at the current game.
+`flappy-rain.aab` on the same page is only for uploading to Google Play.
+
+iPhone builds cannot be distributed this way: Apple requires every app to be
+signed by a paid developer account and installed through the App Store or
+TestFlight. `RELEASE.md` covers that route.
+
 ## ✨ Features
 
 **Graphics — baked 3D + GPU shaders**

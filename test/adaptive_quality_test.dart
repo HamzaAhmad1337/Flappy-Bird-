@@ -81,7 +81,7 @@ void main() {
       // so a device at 4fps still reports 33ms steps. Feeding the guard the
       // clamped value would make a catastrophically slow device look merely
       // mediocre and it would never trip.
-      final clamped = FlappyGame.maxTimeStep;
+      const clamped = FlappyGame.maxTimeStep;
       expect(clamped, greaterThan(GameConfig.slowFrameSeconds),
           reason: 'clamped dt sits above the slow threshold, so feeding the '
               'clamped value would trip on every device instead of the slow '
