@@ -71,11 +71,15 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
+      # versionCode comes from pubspec's `+1`, so every build would otherwise
+      # ship as version 1: Google Play rejects a second upload at the same
+      # versionCode, and a phone cannot tell two builds apart. The run number
+      # only ever increases, which is the one property Android requires.
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-number=${{ github.run_number }}
 
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --build-number=${{ github.run_number }}
 
       - name: Name the APK something a human recognises
         run: |
@@ -123,4 +127,4 @@ jobs:
             `flappy-rain.aab` is only for uploading to Google Play; you do not
             need it to play.
 
-            Built from commit ${{ github.sha }}.
+            Build ${{ github.run_number }}, from commit ${{ github.sha }}.
