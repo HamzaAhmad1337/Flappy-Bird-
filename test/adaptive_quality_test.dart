@@ -15,7 +15,7 @@ class _Guard {
   void frame(double rawDt) {
     if (lowPower) return;
     if (rawDt > GameConfig.slowFrameSeconds) {
-      _slowFor += rawDt;
+      _slowFor += min(rawDt, GameConfig.maxFrameCredit);
       if (_slowFor >= GameConfig.slowSustainSeconds) lowPower = true;
     } else {
       _slowFor = max(0, _slowFor - rawDt * 2);
@@ -51,12 +51,33 @@ void main() {
 
     test('an isolated hitch is not mistaken for a slow device', () {
       final g = _Guard();
-      // One horrible 400ms frame — an overlay rebuild, a GC pause, a resume —
-      // surrounded by healthy ones.
+      // One horrible 400ms frame — an overlay rebuild, a GC pause — surrounded
+      // by healthy ones.
       g.run(16.7, 5);
       g.frame(0.4);
       g.run(16.7, 5);
       expect(g.lowPower, isFalse);
+    });
+
+    test('resuming from the lock screen does not strip the effects', () {
+      // Regression: Flame derives dt by subtracting timestamps with no upper
+      // bound, so coming back after minutes away arrives as a single frame
+      // tens of seconds long. Credited in full it buried the sustain window
+      // instantly, and the player's game was permanently plainer for no
+      // reason they could see. The original hitch test used 400ms and sailed
+      // straight past this.
+      for (final gap in [3.0, 30.0, 600.0]) {
+        final g = _Guard()..run(16.7, 5);
+        g.frame(gap);
+        g.run(16.7, 5);
+        expect(g.lowPower, isFalse, reason: 'a ${gap}s gap must not trip it');
+      }
+    });
+
+    test('capping frame credit still lets a genuinely slow device trip', () {
+      // The cap must bound lifecycle gaps without blunting the real signal.
+      final g = _Guard()..run(100, 4); // a steady, miserable 10fps
+      expect(g.lowPower, isTrue);
     });
 
     test('intermittent stutter does not trip it either', () {

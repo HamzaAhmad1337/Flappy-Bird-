@@ -97,8 +97,14 @@ class GameConfig {
   static const double slowFrameSeconds = 0.025;
 
   /// How much *sustained* slowness it takes before shedding effects. Long
-  /// enough that a loading stutter or a lock-screen resume can't trip it.
+  /// enough that a loading stutter can't trip it.
   static const double slowSustainSeconds = 2.5;
+
+  /// The most one frame may contribute toward that total. Bounds the evidence
+  /// any single frame can give, so a lifecycle gap — a resume after minutes on
+  /// the lock screen, which arrives as one enormous dt — cannot masquerade as
+  /// a slow device. A device genuinely running at 10fps still trips on time.
+  static const double maxFrameCredit = 0.1;
 
   // ---- Rendering -----------------------------------------------------------
   static const double lensWetness = 0.85; // rain-on-lens strength (0..1)

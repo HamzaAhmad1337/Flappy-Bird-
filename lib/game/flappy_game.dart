@@ -136,7 +136,13 @@ class FlappyGame extends FlameGame with KeyboardEvents {
   void _trackFrameRate(double rawDt) {
     if (lowPower) return;
     if (rawDt > GameConfig.slowFrameSeconds) {
-      _slowFor += rawDt;
+      // Cap how much any single frame may testify. Flame derives dt by
+      // subtracting timestamps with no upper bound (game_loop.dart), so
+      // resuming from the lock screen arrives as one frame tens of seconds
+      // long. Added raw, that one frame would bury the sustain threshold and
+      // strip the effects permanently — the player locks their phone, comes
+      // back, and the game is plainer forever with no explanation.
+      _slowFor += min(rawDt, GameConfig.maxFrameCredit);
       if (_slowFor >= GameConfig.slowSustainSeconds) lowPower = true;
     } else {
       // Decay faster than it accumulates, so only sustained slowness counts.

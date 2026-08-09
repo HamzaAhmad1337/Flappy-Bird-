@@ -39,6 +39,16 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Flutter no longer ships a 32-bit x86 engine, but a transitive
+        // AndroidX dependency still contributes lib/x86/*.so. That is enough
+        // for Android's installer to pick x86 as the primary ABI on such a
+        // device and then fail to find libflutter.so — an install that
+        // launches straight into a crash. Ship only the ABIs that carry a
+        // complete engine.
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
     }
 
     signingConfigs {
